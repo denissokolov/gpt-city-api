@@ -2,25 +2,31 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import { HealthModule } from '../../src/health/health.module';
+import { HealthResponseDto } from '../../src/health/health.dto';
 
-describe('AppController (e2e)', () => {
+describe('HealthController (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [HealthModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/health (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/health')
       .expect(200)
-      .expect('Hello World!');
+      .expect((res) => {
+        const body = res.body as HealthResponseDto;
+        expect(body.status).toBe('ok');
+        expect(body.version).toBe('0.0.1');
+        expect(new Date(body.time).toISOString()).toBe(body.time);
+      });
   });
 
   afterEach(async () => {

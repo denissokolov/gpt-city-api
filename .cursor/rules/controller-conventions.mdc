@@ -1,0 +1,46 @@
+---
+description: NestJS controller and DTO conventions
+globs: src/**/*.controller.ts
+alwaysApply: false
+---
+
+# Controller Conventions
+
+## DTOs
+
+- Always use DTO classes for request bodies, query params, and responses — never use plain objects or inline types.
+- Place DTOs in a file named `<name>.dto.ts` alongside the controller (e.g. `health.dto.ts`).
+- Decorate every DTO property with `@ApiProperty()` from `@nestjs/swagger`.
+- Always include both `description` and `example` in every `@ApiProperty()`. The description should explain the meaning of the field in plain English, not just restate its name.
+
+```typescript
+// ❌ BAD — no description
+@ApiProperty({ example: '2026-04-12T00:00:00.000Z' })
+time: string;
+
+// ✅ GOOD
+@ApiProperty({ description: 'Current server time', example: '2026-04-12T00:00:00.000Z' })
+time: string;
+```
+
+## Controllers
+
+- Annotate every controller with `@ApiTags()`.
+- Annotate every endpoint with the appropriate `@ApiOperation()` and `@ApiResponse()` decorators.
+- Never put business logic inside a controller method. Delegate all logic to an injected service.
+
+```typescript
+// ❌ BAD — business logic in controller
+@Get()
+check(): HealthResponseDto {
+  return { status: 'ok', version, time: new Date().toISOString() };
+}
+
+// ✅ GOOD — logic lives in the service
+@Get()
+@ApiOperation({ summary: 'Check service health' })
+@ApiResponse({ status: 200, type: HealthResponseDto })
+check(): HealthResponseDto {
+  return this.healthService.check();
+}
+```
