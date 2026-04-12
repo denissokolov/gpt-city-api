@@ -1,30 +1,23 @@
 name: Deploy
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
 
 jobs:
   deploy:
     name: Deploy to Mau
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
-      - name: Setup Environment (PR)
-        if: ${{ github.event_name == 'pull_request' }}
-        shell: bash
-        run: |
-          echo "GIT_HASH=${{ github.event.pull_request.head.sha }}" >>${GITHUB_ENV}
-      - name: Setup Environment (Push)
-        if: ${{ github.event_name == 'push' }}
-        shell: bash
-        run: |
-          echo "GIT_HASH=${GITHUB_SHA}" >> ${GITHUB_ENV}
+      - run: npm ci
       - name: Push and deploy
         run: npx @nestjs/mau deploy --wait-for-service-stability
         env:
