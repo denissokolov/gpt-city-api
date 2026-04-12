@@ -1,9 +1,5 @@
 # GPT City API
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
 ## Project setup
 
 ```bash
@@ -23,9 +19,20 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
-## Run tests
+## Run checks
 
 ```bash
+# All checks in one command
+$ npm run check
+```
+
+```bash
+# TypeScript Checks
+$ npm run typecheck
+
+# eslint
+$ npm run test
+
 # unit tests
 $ npm run test
 
@@ -92,5 +99,5 @@ $ git push heroku main
 ### View logs
 
 ```bash
-$ heroku logs --tail --app <your-app-name>
+$ heroku logs --tail --app gpt-city-api
 ```

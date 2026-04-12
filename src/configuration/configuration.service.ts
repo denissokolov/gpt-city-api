@@ -19,27 +19,9 @@ export class ConfigurationService {
   }
 
   getDatabaseConfig(): TypeOrmModuleOptions {
-    const databaseUrl = process.env.DATABASE_URL;
-    if (databaseUrl) {
-      return {
-        type: 'postgres',
-        url: databaseUrl,
-        ssl:
-          process.env.DATABASE_SSL !== 'false'
-            ? { rejectUnauthorized: false }
-            : false,
-        autoLoadEntities: true,
-        synchronize: false,
-      };
-    }
-
     return {
       type: 'postgres',
-      host: this.requireEnv('DATABASE_HOST'),
-      port: parseInt(this.requireEnv('DATABASE_PORT'), 10),
-      username: this.requireEnv('DATABASE_USERNAME'),
-      password: this.requireEnv('DATABASE_PASSWORD'),
-      database: this.requireEnv('DATABASE_NAME'),
+      url: this.requireEnv('DATABASE_URL'),
       ssl:
         process.env.DATABASE_SSL !== 'false'
           ? { rejectUnauthorized: false }
