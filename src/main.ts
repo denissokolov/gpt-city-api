@@ -1,5 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 
@@ -53,7 +57,10 @@ Replace \`<base-url>\` with the deployment URL or \`http://localhost:3000\` for 
 `.trim();
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter(),
+  );
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
@@ -73,8 +80,8 @@ async function bootstrap() {
     include: [HealthModule, CharactersModule],
   });
 
-  app.use('/api', apiReference({ content: document }));
+  app.use('/api', apiReference({ content: document, withFastify: true }));
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap().catch(console.error);

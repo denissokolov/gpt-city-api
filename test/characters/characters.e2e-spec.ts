@@ -1,8 +1,10 @@
-import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { CharacterDto } from '../../src/modules/characters/character.dto';
 import { Character } from '../../src/modules/characters/character.entity';
 import { Provider, Sex } from '../../src/modules/characters/character.enum';
@@ -34,7 +36,7 @@ const mockRepository = {
 };
 
 describe('CharactersController (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: NestFastifyApplication;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -50,8 +52,11 @@ describe('CharactersController (e2e)', () => {
       ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication<NestFastifyApplication>(
+      new FastifyAdapter(),
+    );
     await app.init();
+    await app.getHttpAdapter().getInstance().ready();
   });
 
   afterEach(async () => {

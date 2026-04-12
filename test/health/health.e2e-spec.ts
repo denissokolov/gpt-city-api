@@ -1,15 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { HealthController } from '../../src/modules/health/health.controller';
 import { HealthService } from '../../src/modules/health/health.service';
 import { ConfigurationModule } from '../../src/common/configuration/configuration.module';
 import { HealthResponseDto } from '../../src/modules/health/health.dto';
 
 describe('HealthController (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: NestFastifyApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -24,8 +26,11 @@ describe('HealthController (e2e)', () => {
       ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication<NestFastifyApplication>(
+      new FastifyAdapter(),
+    );
     await app.init();
+    await app.getHttpAdapter().getInstance().ready();
   });
 
   it('/health (GET)', () => {
