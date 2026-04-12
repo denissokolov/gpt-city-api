@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Tool } from '@rekog/mcp-nest';
 import { z } from 'zod';
-import { Sex } from './character.enum';
+import { Provider, Sex } from './character.enum';
 import type {
   CreateCharacterInput,
   UpdateCharacterInput,
@@ -52,6 +52,11 @@ export class CharactersTool {
       backstory: z
         .string()
         .describe('Backstory — where they came from and what shaped them'),
+      model: z
+        .string()
+        .max(255)
+        .describe('AI model used to power the character (e.g. "gpt-4o")'),
+      provider: z.enum(Provider).describe('AI provider that hosts the model'),
     }),
     annotations: { readOnlyHint: false },
   })
@@ -75,6 +80,8 @@ export class CharactersTool {
         .optional()
         .describe('New personality description'),
       backstory: z.string().optional().describe('New backstory'),
+      model: z.string().max(255).optional().describe('New AI model'),
+      provider: z.enum(Provider).optional().describe('New AI provider'),
     }),
     annotations: { readOnlyHint: false },
   })

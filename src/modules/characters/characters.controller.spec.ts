@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { Character } from './character.entity';
-import { Sex } from './character.enum';
+import { Provider, Sex } from './character.enum';
 import { CharactersController } from './characters.controller';
 import { CharactersService } from './characters.service';
 
@@ -15,6 +15,8 @@ const mockCharacter: Character = {
   personality:
     'Curious, empathetic, and quick-witted with a dry sense of humour.',
   backstory: 'Grew up in a small town, fascinated by the stars.',
+  model: 'gpt-4o',
+  provider: Provider.OpenAI,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
 };

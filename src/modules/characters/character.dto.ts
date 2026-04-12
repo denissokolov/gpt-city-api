@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Sex } from './character.enum';
+import { Provider, Sex } from './character.enum';
 
 export class CharacterDto {
   @ApiProperty({
@@ -53,4 +53,17 @@ export class CharacterDto {
       'Grew up in a small town, fascinated by the stars. Won a scholarship to study physics and never looked back.',
   })
   backstory: string;
+
+  @ApiProperty({
+    description: 'AI model used to power the character',
+    example: 'gpt-4o',
+  })
+  model: string;
+
+  @ApiProperty({
+    description: 'AI provider that hosts the model',
+    enum: Provider,
+    example: Provider.OpenAI,
+  })
+  provider: Provider;
 }
