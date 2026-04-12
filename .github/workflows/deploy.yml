@@ -17,6 +17,10 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
+      - name: Setup Environment
+        shell: bash
+        run: |
+          echo "GIT_HASH=${GITHUB_SHA}" >> ${GITHUB_ENV}
       - run: npm ci
       - name: Push and deploy
         run: npx @nestjs/mau deploy --wait-for-service-stability
