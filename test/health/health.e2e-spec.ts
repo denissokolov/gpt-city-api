@@ -1,8 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { HealthModule } from '../../src/health/health.module';
+import { HealthController } from '../../src/health/health.controller';
+import { HealthService } from '../../src/health/health.service';
+import { ConfigurationModule } from '../../src/configuration/configuration.module';
 import { HealthResponseDto } from '../../src/health/health.dto';
 
 describe('HealthController (e2e)', () => {
@@ -10,7 +13,15 @@ describe('HealthController (e2e)', () => {
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [HealthModule],
+      imports: [ConfigurationModule],
+      controllers: [HealthController],
+      providers: [
+        HealthService,
+        {
+          provide: DataSource,
+          useValue: { query: jest.fn().mockResolvedValue([{ '?column?': 1 }]) },
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -25,6 +36,7 @@ describe('HealthController (e2e)', () => {
         const body = res.body as HealthResponseDto;
         expect(body.status).toBe('ok');
         expect(body.version).toBe('0.0.1');
+        expect(body.database).toBe('ok');
         expect(new Date(body.time).toISOString()).toBe(body.time);
       });
   });
