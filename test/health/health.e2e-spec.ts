@@ -5,7 +5,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { HealthController } from '../../src/health/health.controller';
 import { HealthService } from '../../src/health/health.service';
-import { ConfigurationModule } from '../../src/configuration/configuration.module';
+import { ConfigurationModule } from '../../src/common/configuration/configuration.module';
 import { HealthResponseDto } from '../../src/health/health.dto';
 
 describe('HealthController (e2e)', () => {
