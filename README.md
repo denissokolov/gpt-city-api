@@ -36,9 +36,29 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Scalar
+
+If you work on UI, design, or product and need to **see what the API returns**—status codes, JSON shape, headers—without writing backend code, use [Scalar](https://scalar.com/). It is a browser-based API explorer built into this project—no extra install needed.
+
+**What you might use it for:** browsing all available endpoints in one place, reading request/response schemas, or trying out a request directly in the browser.
+
+**How to get started**
+
+The easiest way is the staging environment—no local setup required:
+
+- **Staging:** [http://gpt-city-api-alb-1430688941.eu-west-1.elb.amazonaws.com/api](http://gpt-city-api-alb-1430688941.eu-west-1.elb.amazonaws.com/api)
+
+To use it locally:
+
+1. Clone this repository and install dependencies once: `npm install`.
+2. Start the API locally: `npm run start`.
+3. Open [http://localhost:3000/api](http://localhost:3000/api) in your browser.
+
+The page lists every endpoint, shows expected parameters and response shapes, and lets you send requests without leaving the browser.
+
 ## Bruno
 
-If you work on UI, design, or product and need to **see what the API returns**—status codes, JSON shape, headers—without writing backend code, use [Bruno](https://www.usebruno.com/). It is a free, open-source desktop app (similar idea to Postman) for sending HTTP requests and reading responses.
+If you need more control over requests—custom headers, scripting, chained calls—use [Bruno](https://www.usebruno.com/). It is a free, open-source desktop app (similar idea to Postman) for sending HTTP requests and reading responses.
 
 **What you might use it for:** checking a response while you build a screen, confirming field names for a handoff, or reproducing a bug with a specific request.
 
@@ -59,6 +79,11 @@ This project is deployed via [Mau](https://mau.nestjs.com), the official NestJS 
 To deploy:
 
 ```bash
-$ npm install -g @nestjs/mau
 $ mau deploy
+```
+
+To view logs:
+
+```bash
+$ mau access-logs
 ```
