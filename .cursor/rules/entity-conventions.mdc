@@ -1,0 +1,45 @@
+---
+description: TypeORM entity conventions — required fields and decorators
+globs: src/**/*.entity.ts
+alwaysApply: false
+---
+
+# Entity Conventions
+
+## Primary Key
+
+Always use `@PrimaryGeneratedColumn('uuid')` with type `string`. Never use auto-increment integer ids.
+
+## Required Timestamp Fields
+
+Every entity must include `createdAt` and `updatedAt` fields using TypeORM's `@CreateDateColumn` and `@UpdateDateColumn` decorators with `type: 'timestamptz'` to preserve timezone information.
+
+```typescript
+// ❌ BAD — integer id, missing timestamp fields
+@Entity('characters')
+export class Character {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ length: 255 })
+  name: string;
+}
+
+// ✅ GOOD
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+
+@Entity('characters')
+export class Character {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ length: 255 })
+  name: string;
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
+}
+```

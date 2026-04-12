@@ -28,6 +28,8 @@ export class ConfigurationService {
           : false,
       autoLoadEntities: true,
       synchronize: false,
+      migrations: [join(__dirname, '..', 'database', 'migrations', '*.js')],
+      migrationsRun: false,
     };
   }
 

@@ -1,0 +1,42 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Character } from './character.entity';
+import { CreateCharacterDto } from './character.dto';
+import { UpdateCharacterDto } from './character.dto';
+
+@Injectable()
+export class CharactersService {
+  constructor(
+    @InjectRepository(Character)
+    private readonly characterRepository: Repository<Character>,
+  ) {}
+
+  findAll(): Promise<Character[]> {
+    return this.characterRepository.find();
+  }
+
+  async findOne(id: string): Promise<Character> {
+    const character = await this.characterRepository.findOneBy({ id });
+    if (!character) {
+      throw new NotFoundException(`Character with id "${id}" not found`);
+    }
+    return character;
+  }
+
+  create(dto: CreateCharacterDto): Promise<Character> {
+    const character = this.characterRepository.create(dto);
+    return this.characterRepository.save(character);
+  }
+
+  async update(id: string, dto: UpdateCharacterDto): Promise<Character> {
+    const character = await this.findOne(id);
+    Object.assign(character, dto);
+    return this.characterRepository.save(character);
+  }
+
+  async remove(id: string): Promise<void> {
+    const character = await this.findOne(id);
+    await this.characterRepository.remove(character);
+  }
+}

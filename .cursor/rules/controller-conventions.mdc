@@ -29,6 +29,15 @@ time: string;
 - Annotate every endpoint with the appropriate `@ApiOperation()` and `@ApiResponse()` decorators.
 - Never put business logic inside a controller method. Delegate all logic to an injected service.
 
+## Tests
+
+Every controller requires two test files. Create them alongside the implementation:
+
+- `src/modules/<feature>/<feature>.controller.spec.ts` — unit tests; mock the service with `jest.fn()`.
+- `test/<feature>/<feature>.e2e-spec.ts` — e2e tests; wire up a real `NestApplication` with `ValidationPipe` and mock only the TypeORM repository via `getRepositoryToken`.
+
+Cover every endpoint in both files: happy path, 404 for unknown ids, and 400 for invalid request bodies.
+
 ```typescript
 // ❌ BAD — business logic in controller
 @Get()

@@ -6,6 +6,17 @@ alwaysApply: false
 
 # Architecture Conventions
 
+## NestJS: module placement
+All feature modules live under `src/modules/<feature>/`. Never create module files directly under `src/`.
+
+```
+// ❌ BAD
+src/characters/characters.module.ts
+
+// ✅ GOOD
+src/modules/characters/characters.module.ts
+```
+
 ## NestJS: one class per file
 Never put a `@Module` and a `@Injectable()` service in the same file. Each class gets its own file.
 
