@@ -43,3 +43,33 @@ export class Character {
   updatedAt: Date;
 }
 ```
+
+## Enums
+
+Use TypeScript `enum` for columns with a fixed set of values. Place all enums for an entity in a single `<entity>.enum.ts` file alongside the entity and import them. Reference the enum in both the `@Column` decorator and the property type.
+
+```typescript
+// ❌ BAD — inline string union
+@Column({ type: 'enum', enum: ['male', 'female', 'non_binary'] })
+sex: 'male' | 'female' | 'non_binary';
+
+// ❌ BAD — enum defined inside the entity file
+// character.entity.ts
+export enum Sex { Male = 'male' }
+@Entity('characters')
+export class Character { ... }
+
+// ✅ GOOD — enum in a separate file
+// character.enum.ts
+export enum Sex {
+  Male = 'male',
+  Female = 'female',
+  NonBinary = 'non_binary',
+}
+
+// character.entity.ts
+import { Sex } from './character.enum';
+
+@Column({ type: 'enum', enum: Sex })
+sex: Sex;
+```

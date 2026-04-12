@@ -5,14 +5,20 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { CharacterDto } from '../../src/modules/characters/character.dto';
 import { Character } from '../../src/modules/characters/character.entity';
+import { Sex } from '../../src/modules/characters/character.enum';
 import { CharactersController } from '../../src/modules/characters/characters.controller';
 import { CharactersService } from '../../src/modules/characters/characters.service';
 
 const mockCharacter: Character = {
   id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-  name: 'Aria',
+  firstName: 'Albert',
+  lastName: 'Einstein',
+  title: 'Professor of Physics',
+  age: 45,
+  sex: Sex.Male,
   personality:
     'Curious, empathetic, and quick-witted with a dry sense of humour.',
+  backstory: 'Grew up in a small town, fascinated by the stars.',
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
 };
@@ -62,7 +68,9 @@ describe('CharactersController (e2e)', () => {
           const body = res.body as CharacterDto[];
           expect(body).toHaveLength(1);
           expect(body[0].id).toBe(mockCharacter.id);
-          expect(body[0].name).toBe(mockCharacter.name);
+          expect(body[0].firstName).toBe(mockCharacter.firstName);
+          expect(body[0].lastName).toBe(mockCharacter.lastName);
+          expect(body[0].title).toBe(mockCharacter.title);
           expect(body[0].personality).toBe(mockCharacter.personality);
         });
     });
@@ -87,7 +95,7 @@ describe('CharactersController (e2e)', () => {
         .expect((res) => {
           const body = res.body as CharacterDto;
           expect(body.id).toBe(mockCharacter.id);
-          expect(body.name).toBe(mockCharacter.name);
+          expect(body.firstName).toBe(mockCharacter.firstName);
         });
     });
 
@@ -103,9 +111,14 @@ describe('CharactersController (e2e)', () => {
   describe('POST /characters', () => {
     it('should create and return a character', async () => {
       const dto = {
-        name: 'Aria',
+        firstName: 'Albert',
+        lastName: 'Einstein',
+        title: 'Professor of Physics',
+        age: 45,
+        sex: Sex.Male,
         personality:
           'Curious, empathetic, and quick-witted with a dry sense of humour.',
+        backstory: 'Grew up in a small town, fascinated by the stars.',
       };
       mockRepository.create.mockReturnValue(mockCharacter);
       mockRepository.save.mockResolvedValue(mockCharacter);
@@ -117,22 +130,36 @@ describe('CharactersController (e2e)', () => {
         .expect((res) => {
           const body = res.body as CharacterDto;
           expect(body.id).toBe(mockCharacter.id);
-          expect(body.name).toBe(dto.name);
+          expect(body.firstName).toBe(dto.firstName);
           expect(body.personality).toBe(dto.personality);
         });
     });
 
-    it('should return 400 when name is missing', async () => {
+    it('should return 400 when firstName is missing', async () => {
       return request(app.getHttpServer())
         .post('/characters')
-        .send({ personality: 'Some personality' })
+        .send({
+          lastName: 'Einstein',
+          title: 'Professor',
+          age: 45,
+          sex: Sex.Male,
+          personality: 'Some personality',
+          backstory: 'Some backstory',
+        })
         .expect(400);
     });
 
     it('should return 400 when personality is missing', async () => {
       return request(app.getHttpServer())
         .post('/characters')
-        .send({ name: 'Aria' })
+        .send({
+          firstName: 'Albert',
+          lastName: 'Einstein',
+          title: 'Professor',
+          age: 45,
+          sex: Sex.Male,
+          backstory: 'Some backstory',
+        })
         .expect(400);
     });
 
@@ -146,17 +173,17 @@ describe('CharactersController (e2e)', () => {
 
   describe('PATCH /characters/:id', () => {
     it('should update and return a character', async () => {
-      const updated: Character = { ...mockCharacter, name: 'Aria Updated' };
+      const updated: Character = { ...mockCharacter, firstName: 'Isaac' };
       mockRepository.findOneBy.mockResolvedValue(mockCharacter);
       mockRepository.save.mockResolvedValue(updated);
 
       return request(app.getHttpServer())
         .patch(`/characters/${mockCharacter.id}`)
-        .send({ name: 'Aria Updated' })
+        .send({ firstName: 'Isaac' })
         .expect(200)
         .expect((res) => {
           const body = res.body as CharacterDto;
-          expect(body.name).toBe('Aria Updated');
+          expect(body.firstName).toBe('Isaac');
         });
     });
 
@@ -165,7 +192,7 @@ describe('CharactersController (e2e)', () => {
 
       return request(app.getHttpServer())
         .patch('/characters/unknown-id')
-        .send({ name: 'X' })
+        .send({ firstName: 'X' })
         .expect(404);
     });
   });

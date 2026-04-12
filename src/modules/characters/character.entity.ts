@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Sex } from './character.enum';
 
 @Entity('characters')
 export class Character {
@@ -12,10 +13,25 @@ export class Character {
   id: string;
 
   @Column({ length: 255 })
-  name: string;
+  firstName: string;
+
+  @Column({ length: 255 })
+  lastName: string;
+
+  @Column({ length: 255 })
+  title: string;
+
+  @Column('int')
+  age: number;
+
+  @Column({ type: 'enum', enum: Sex })
+  sex: Sex;
 
   @Column('text')
   personality: string;
+
+  @Column('text')
+  backstory: string;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

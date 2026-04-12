@@ -2,14 +2,20 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Character } from './character.entity';
+import { Sex } from './character.enum';
 import { CharactersController } from './characters.controller';
 import { CharactersService } from './characters.service';
 
 const mockCharacter: Character = {
   id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-  name: 'Aria',
+  firstName: 'Albert',
+  lastName: 'Einstein',
+  title: 'Professor of Physics',
+  age: 45,
+  sex: Sex.Male,
   personality:
     'Curious, empathetic, and quick-witted with a dry sense of humour.',
+  backstory: 'Grew up in a small town, fascinated by the stars.',
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
 };
@@ -80,9 +86,14 @@ describe('CharactersController', () => {
   describe('create', () => {
     it('should create and return a character', async () => {
       const dto = {
-        name: 'Aria',
+        firstName: 'Albert',
+        lastName: 'Einstein',
+        title: 'Professor of Physics',
+        age: 45,
+        sex: Sex.Male,
         personality:
           'Curious, empathetic, and quick-witted with a dry sense of humour.',
+        backstory: 'Grew up in a small town, fascinated by the stars.',
       };
       service.create.mockResolvedValue(mockCharacter);
 
@@ -95,8 +106,8 @@ describe('CharactersController', () => {
 
   describe('update', () => {
     it('should update and return a character', async () => {
-      const dto = { name: 'Aria Updated' };
-      const updated: Character = { ...mockCharacter, name: 'Aria Updated' };
+      const dto = { firstName: 'Isaac' };
+      const updated: Character = { ...mockCharacter, firstName: 'Isaac' };
       service.update.mockResolvedValue(updated);
 
       const result = await controller.update(mockCharacter.id, dto);
@@ -109,7 +120,7 @@ describe('CharactersController', () => {
       service.update.mockRejectedValue(new NotFoundException());
 
       await expect(
-        controller.update('unknown-id', { name: 'X' }),
+        controller.update('unknown-id', { firstName: 'X' }),
       ).rejects.toThrow(NotFoundException);
     });
   });

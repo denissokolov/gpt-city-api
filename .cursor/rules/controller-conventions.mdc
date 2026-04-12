@@ -23,6 +23,22 @@ time: string;
 time: string;
 ```
 
+- For enum fields, import the TypeScript enum from the `<entity>.enum.ts` file and use it in `@ApiProperty({ enum: MyEnum })` and `@IsEnum(MyEnum)`. Never use `@IsIn()` with raw string arrays for enum values.
+
+```typescript
+// ❌ BAD — raw strings
+@ApiProperty({ enum: ['male', 'female', 'non_binary'] })
+@IsIn(['male', 'female', 'non_binary'])
+sex: 'male' | 'female' | 'non_binary';
+
+// ✅ GOOD — TypeScript enum from .enum.ts file
+import { Sex } from './character.enum';
+
+@ApiProperty({ description: 'Sex of the character', enum: Sex, example: Sex.Male })
+@IsEnum(Sex)
+sex: Sex;
+```
+
 ## Controllers
 
 - Annotate every controller with `@ApiTags()`.

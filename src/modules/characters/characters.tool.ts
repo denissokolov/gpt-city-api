@@ -1,0 +1,114 @@
+import { Injectable } from '@nestjs/common';
+import { Tool } from '@rekog/mcp-nest';
+import { z } from 'zod';
+import { Sex } from './character.enum';
+import { CharactersService } from './characters.service';
+
+@Injectable()
+export class CharactersTool {
+  constructor(private readonly charactersService: CharactersService) {}
+
+  @Tool({
+    name: 'list-characters',
+    description: 'List all characters in the city',
+    parameters: z.object({}),
+    annotations: { readOnlyHint: true },
+  })
+  async listCharacters() {
+    const characters = await this.charactersService.findAll();
+    return JSON.stringify(characters, null, 2);
+  }
+
+  @Tool({
+    name: 'get-character',
+    description: 'Get a single character by ID',
+    parameters: z.object({
+      id: z.uuid().describe('UUID of the character'),
+    }),
+    annotations: { readOnlyHint: true },
+  })
+  async getCharacter({ id }: { id: string }) {
+    const character = await this.charactersService.findOne(id);
+    return JSON.stringify(character, null, 2);
+  }
+
+  @Tool({
+    name: 'create-character',
+    description: 'Create a new character in the city',
+    parameters: z.object({
+      firstName: z.string().max(255).describe('First name of the character'),
+      lastName: z.string().max(255).describe('Last name of the character'),
+      title: z
+        .string()
+        .max(255)
+        .describe('Title or role in the city (e.g. "Professor of Physics")'),
+      age: z.int().min(0).describe('Age of the character in years'),
+      sex: z.nativeEnum(Sex).describe('Sex of the character'),
+      personality: z.string().describe('Personality description'),
+      backstory: z
+        .string()
+        .describe('Backstory — where they came from and what shaped them'),
+    }),
+    annotations: { readOnlyHint: false },
+  })
+  async createCharacter(args: {
+    firstName: string;
+    lastName: string;
+    title: string;
+    age: number;
+    sex: Sex;
+    personality: string;
+    backstory: string;
+  }) {
+    const character = await this.charactersService.create(args);
+    return JSON.stringify(character, null, 2);
+  }
+
+  @Tool({
+    name: 'update-character',
+    description: 'Update an existing character by ID',
+    parameters: z.object({
+      id: z.string().uuid().describe('UUID of the character to update'),
+      firstName: z.string().max(255).optional().describe('New first name'),
+      lastName: z.string().max(255).optional().describe('New last name'),
+      title: z.string().max(255).optional().describe('New title or role'),
+      age: z.int().min(0).optional().describe('New age'),
+      sex: z.nativeEnum(Sex).optional().describe('New sex'),
+      personality: z
+        .string()
+        .optional()
+        .describe('New personality description'),
+      backstory: z.string().optional().describe('New backstory'),
+    }),
+    annotations: { readOnlyHint: false },
+  })
+  async updateCharacter({
+    id,
+    ...dto
+  }: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    title?: string;
+    age?: number;
+    sex?: Sex;
+    personality?: string;
+    backstory?: string;
+  }) {
+    const character = await this.charactersService.update(id, dto);
+    return JSON.stringify(character, null, 2);
+  }
+
+  @Tool({
+    name: 'delete-character',
+    description: 'Delete a character by ID',
+    parameters: z.object({
+      id: z.string().uuid().describe('UUID of the character to delete'),
+    }),
+    annotations: { readOnlyHint: false, destructiveHint: true },
+  })
+  async deleteCharacter({ id }: { id: string }) {
+    await this.charactersService.remove(id);
+    return `Character ${id} deleted`;
+  }
+}
