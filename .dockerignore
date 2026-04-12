@@ -1,1 +1,13 @@
 node_modules
+dist
+build
+coverage
+.git
+.github
+.env*
+.vscode
+.idea
+.cursor
+*.log
+*.md
+test

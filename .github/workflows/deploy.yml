@@ -6,36 +6,69 @@ on:
     types: [completed]
     branches: [main]
 
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+
 jobs:
   deploy:
-    name: Deploy to Mau (staging)
+    name: Deploy to ECS Express (staging)
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     environment: staging
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          node-version: '24'
-          cache: 'npm'
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-ecs-role
+          role-session-name: GitHubActionsECSDeployment
 
-      - name: Setup Environment
-        shell: bash
-        run: |
-          echo "GIT_HASH=${GITHUB_SHA}" >> ${GITHUB_ENV}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - run: npm ci
+      - name: Get short commit hash
+        run: echo "IMAGE_TAG=${GITHUB_SHA:0:7}" >> $GITHUB_ENV
 
-      - name: Push and deploy
-        run: npx @nestjs/mau deploy --wait-for-service-stability
-        env:
-          MAU_KEY: ${{ secrets.MAU_KEY }}
-          MAU_SECRET: ${{ secrets.MAU_SECRET }}
-          DATABASE_HOST: ${{ vars.DATABASE_HOST }}
-          DATABASE_PORT: ${{ vars.DATABASE_PORT }}
-          DATABASE_USERNAME: ${{ vars.DATABASE_USERNAME }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-          DATABASE_NAME: ${{ vars.DATABASE_NAME }}
-          DATABASE_SSL: ${{ vars.DATABASE_SSL }}
+      - name: Build, tag, and push image to Amazon ECR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+
+      - name: Deploy to ECS Express Mode
+        uses: aws-actions/amazon-ecs-deploy-express-service@v1
+        with:
+          service-name: ${{ env.ECS_SERVICE }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          execution-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
+          infrastructure-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsInfrastructureRoleForExpressServices
+          cluster: ${{ env.ECS_CLUSTER }}
+          container-port: 3000
+          health-check-path: /health
+          cpu: '256'
+          memory: '512'
+          environment-variables: |
+            [
+              {"name":"DATABASE_HOST","value":"${{ vars.DATABASE_HOST }}"},
+              {"name":"DATABASE_PORT","value":"${{ vars.DATABASE_PORT }}"},
+              {"name":"DATABASE_USERNAME","value":"${{ vars.DATABASE_USERNAME }}"},
+              {"name":"DATABASE_PASSWORD","value":"${{ secrets.DATABASE_PASSWORD }}"},
+              {"name":"DATABASE_NAME","value":"${{ vars.DATABASE_NAME }}"},
+              {"name":"DATABASE_SSL","value":"${{ vars.DATABASE_SSL }}"},
+              {"name":"PORT","value":"3000"}
+              {"name":"NODE_ENV","value":"production"}
+            ]
