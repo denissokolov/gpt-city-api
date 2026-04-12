@@ -9,7 +9,7 @@ export class ConfigurationService {
 
   constructor() {
     const { version } = JSON.parse(
-      readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf8'),
+      readFileSync(join(__dirname, '..', '..', '..', 'package.json'), 'utf8'),
     ) as { version: string };
     this.serverVersion = version;
   }

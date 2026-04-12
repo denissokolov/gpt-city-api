@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { HealthResponseDto } from './health.dto';
-import { ConfigurationService } from '../configuration/configuration.service';
+import { ConfigurationService } from '../common/configuration/configuration.service';
 
 @Injectable()
 export class HealthService {
