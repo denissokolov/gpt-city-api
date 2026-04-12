@@ -5,19 +5,15 @@ import { ConfigurationService } from '../configuration/configuration.service';
 
 @Injectable()
 export class HealthService {
+  private databaseStatus: string | null = null;
+
   constructor(
     private readonly configurationService: ConfigurationService,
     private readonly dataSource: DataSource,
   ) {}
 
   async check(): Promise<HealthResponseDto> {
-    let database: string;
-    try {
-      await this.dataSource.query('SELECT 1');
-      database = 'ok';
-    } catch {
-      database = 'error';
-    }
+    const database = await this.checkDatabase();
 
     return {
       status: database === 'ok' ? 'ok' : 'degraded',
@@ -25,5 +21,20 @@ export class HealthService {
       time: new Date().toISOString(),
       database,
     };
+  }
+
+  private async checkDatabase(): Promise<string> {
+    if (this.databaseStatus !== null) {
+      return this.databaseStatus;
+    }
+
+    try {
+      await this.dataSource.query('SELECT 1');
+      this.databaseStatus = 'ok';
+    } catch {
+      this.databaseStatus = 'error';
+    }
+
+    return this.databaseStatus;
   }
 }

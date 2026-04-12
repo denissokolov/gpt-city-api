@@ -89,3 +89,24 @@ class OrderService {
   constructor(private readonly mailer: Mailer) {}
 }
 ```
+
+# Class Member Ordering
+
+Place all `private` methods after all `public` methods.
+
+```typescript
+// ❌ BAD
+class UserService {
+  private validate(user: User) { ... }
+  create(user: User) { ... }
+  findAll() { ... }
+}
+
+// ✅ GOOD
+class UserService {
+  create(user: User) { ... }
+  findAll() { ... }
+
+  private validate(user: User) { ... }
+}
+```
