@@ -46,7 +46,7 @@ If you work on UI, design, or product and need to **see what the API returns**â€
 
 The easiest way is the staging environmentâ€”no local setup required:
 
-- **Staging:** [http://gpt-city-api-alb-1430688941.eu-west-1.elb.amazonaws.com/api](http://gpt-city-api-alb-1430688941.eu-west-1.elb.amazonaws.com/api)
+- **Staging:** [https://gpt-city-api-5950170b319a.herokuapp.com/api](https://gpt-city-api-5950170b319a.herokuapp.com/api)
 
 To use it locally:
 
@@ -74,16 +74,23 @@ Collections and environments live in the repository as plain files, so the team 
 
 ## Deployment
 
-This project is deployed via [Mau](https://mau.nestjs.com), the official NestJS platform for deploying applications on AWS.
+This project is deployed to [Heroku](https://www.heroku.com/). Pushes to `main` that pass CI are deployed automatically via the GitHub Actions workflow.
 
-To deploy:
+### Prerequisites
+
+1. Create a Heroku app and add the **Heroku Postgres** addon.
+2. Set the following in your GitHub repo:
+   - **Secret:** `HEROKU_API_KEY`
+   - **Variables:** `HEROKU_APP_NAME`, `HEROKU_EMAIL`
+
+### Manual deploy
 
 ```bash
-$ mau deploy
+$ git push heroku main
 ```
 
-To view logs:
+### View logs
 
 ```bash
-$ mau access-logs
+$ heroku logs --tail --app <your-app-name>
 ```

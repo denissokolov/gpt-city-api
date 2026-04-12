@@ -1,4 +1,4 @@
 name: staging
 variables:
   - name: host
-    value: http://gpt-city-api-alb-1430688941.eu-west-1.elb.amazonaws.com
+    value: https://gpt-city-api-5950170b319a.herokuapp.com

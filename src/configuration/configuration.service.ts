@@ -19,6 +19,20 @@ export class ConfigurationService {
   }
 
   getDatabaseConfig(): TypeOrmModuleOptions {
+    const databaseUrl = process.env.DATABASE_URL;
+    if (databaseUrl) {
+      return {
+        type: 'postgres',
+        url: databaseUrl,
+        ssl:
+          process.env.DATABASE_SSL !== 'false'
+            ? { rejectUnauthorized: false }
+            : false,
+        autoLoadEntities: true,
+        synchronize: false,
+      };
+    }
+
     return {
       type: 'postgres',
       host: this.requireEnv('DATABASE_HOST'),
