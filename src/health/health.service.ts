@@ -11,6 +11,7 @@ export class HealthService {
       status: 'ok',
       version: this.configurationService.getServerVersion(),
       time: new Date().toISOString(),
+      database: 'ok',
     };
   }
 }

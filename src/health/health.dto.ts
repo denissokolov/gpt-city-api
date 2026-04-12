@@ -12,4 +12,7 @@ export class HealthResponseDto {
     example: '2026-04-12T00:00:00.000Z',
   })
   time: string;
+
+  @ApiProperty({ description: 'Database status', example: 'ok' })
+  database: string;
 }
