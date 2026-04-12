@@ -1,0 +1,91 @@
+---
+description: Architecture conventions for TypeScript/NestJS
+globs: **/*.ts
+alwaysApply: false
+---
+
+# Architecture Conventions
+
+## NestJS: one class per file
+Never put a `@Module` and a `@Injectable()` service in the same file. Each class gets its own file.
+
+```typescript
+// ❌ BAD — service and module in configuration.module.ts
+@Injectable()
+export class ConfigurationService { ... }
+
+@Module({ providers: [ConfigurationService] })
+export class ConfigurationModule {}
+
+// ✅ GOOD
+// configuration.service.ts
+@Injectable()
+export class ConfigurationService { ... }
+
+// configuration.module.ts
+@Module({ providers: [ConfigurationService], exports: [ConfigurationService] })
+export class ConfigurationModule {}
+```
+
+# SOLID Principles
+
+## S — Single Responsibility
+Each class/module does one thing. Split when a class has multiple reasons to change.
+
+```typescript
+// ❌ BAD
+class UserService {
+  save(user: User) { /* db logic */ }
+  sendWelcomeEmail(user: User) { /* email logic */ }
+}
+
+// ✅ GOOD
+class UserRepository { save(user: User) {} }
+class UserMailer { sendWelcomeEmail(user: User) {} }
+```
+
+## O — Open/Closed
+Open for extension, closed for modification. Prefer adding new classes over editing existing ones.
+
+```typescript
+// ❌ BAD — add a new type → edit this function
+function getArea(shape: { type: string }) {
+  if (shape.type === 'circle') { ... }
+  if (shape.type === 'rect') { ... }
+}
+
+// ✅ GOOD
+interface Shape { area(): number }
+class Circle implements Shape { area() { ... } }
+class Rect implements Shape { area() { ... } }
+```
+
+## L — Liskov Substitution
+Subtypes must be usable wherever their parent type is expected without breaking behaviour.
+
+## I — Interface Segregation
+Prefer small, focused interfaces over large general ones. Clients should not depend on methods they don't use.
+
+```typescript
+// ❌ BAD
+interface Worker { work(): void; eat(): void; }
+
+// ✅ GOOD
+interface Workable { work(): void; }
+interface Eatable  { eat(): void;  }
+```
+
+## D — Dependency Inversion
+Depend on abstractions, not concretions. Inject dependencies rather than instantiating them.
+
+```typescript
+// ❌ BAD
+class OrderService {
+  private mailer = new SmtpMailer();
+}
+
+// ✅ GOOD
+class OrderService {
+  constructor(private readonly mailer: Mailer) {}
+}
+```

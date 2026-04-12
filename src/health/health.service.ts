@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { version } from '../../package.json';
 import { HealthResponseDto } from './health.dto';
+import { ConfigurationService } from '../configuration/configuration.service';
 
 @Injectable()
 export class HealthService {
+  constructor(private readonly configurationService: ConfigurationService) {}
+
   check(): HealthResponseDto {
     return {
       status: 'ok',
-      version,
+      version: this.configurationService.getServerVersion(),
       time: new Date().toISOString(),
     };
   }
