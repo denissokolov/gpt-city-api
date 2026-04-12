@@ -4,6 +4,7 @@ import { ConfigurationModule } from './common/configuration/configuration.module
 import { DatabaseModule } from './common/database/database.module';
 import { CharactersModule } from './modules/characters/characters.module';
 import { CharactersTool } from './modules/characters/characters.tool';
+import { ChatsModule } from './modules/chats/chats.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
@@ -12,6 +13,7 @@ import { HealthModule } from './modules/health/health.module';
     DatabaseModule,
     HealthModule,
     CharactersModule,
+    ChatsModule,
     McpModule.forRoot({
       name: 'gpt-city',
       version: '0.0.1',

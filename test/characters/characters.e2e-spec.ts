@@ -6,12 +6,12 @@ import {
 import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
 import { CharacterDto } from '../../src/modules/characters/character.dto';
-import { Character } from '../../src/modules/characters/character.entity';
+import { CharacterEntity } from '../../src/modules/characters/character.entity';
 import { Provider, Sex } from '../../src/modules/characters/character.enum';
 import { CharactersController } from '../../src/modules/characters/characters.controller';
 import { CharactersService } from '../../src/modules/characters/characters.service';
 
-const mockCharacter: Character = {
+const mockCharacter: CharacterEntity = {
   id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   firstName: 'Albert',
   lastName: 'Einstein',
@@ -46,7 +46,7 @@ describe('CharactersController (e2e)', () => {
       providers: [
         CharactersService,
         {
-          provide: getRepositoryToken(Character),
+          provide: getRepositoryToken(CharacterEntity),
           useValue: mockRepository,
         },
       ],

@@ -10,6 +10,7 @@ import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
 import { ConfigurationService } from './common/configuration/configuration.service';
 import { CharactersModule } from './modules/characters/characters.module';
+import { ChatsModule } from './modules/chats/chats.module';
 import { HealthModule } from './modules/health/health.module';
 
 const mcpTagDescription = `
@@ -77,7 +78,7 @@ async function bootstrap() {
     .addTag('mcp', mcpTagDescription)
     .build();
   const document = SwaggerModule.createDocument(app, config, {
-    include: [HealthModule, CharactersModule],
+    include: [HealthModule, CharactersModule, ChatsModule],
   });
 
   app.use('/api', apiReference({ content: document, withFastify: true }));

@@ -8,7 +8,7 @@ import {
 import { Provider, Sex } from './character.enum';
 
 @Entity('characters')
-export class Character {
+export class CharacterEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -46,10 +46,10 @@ export class Character {
   updatedAt: Date;
 }
 
-export type CreateCharacterInput = Omit<
-  Character,
+export type CreateCharacterEntityInput = Omit<
+  CharacterEntity,
   'id' | 'createdAt' | 'updatedAt'
 >;
-export type UpdateCharacterInput = Partial<
-  Omit<Character, 'createdAt' | 'updatedAt'>
+export type UpdateCharacterEntityInput = Partial<
+  Omit<CharacterEntity, 'createdAt' | 'updatedAt'>
 > & { id: string };

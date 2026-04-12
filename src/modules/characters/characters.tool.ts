@@ -3,8 +3,8 @@ import { Tool } from '@rekog/mcp-nest';
 import { z } from 'zod';
 import { Provider, Sex } from './character.enum';
 import type {
-  CreateCharacterInput,
-  UpdateCharacterInput,
+  CreateCharacterEntityInput,
+  UpdateCharacterEntityInput,
 } from './character.entity';
 import { CharactersService } from './characters.service';
 
@@ -60,7 +60,7 @@ export class CharactersTool {
     }),
     annotations: { readOnlyHint: false },
   })
-  async createCharacter(args: CreateCharacterInput) {
+  async createCharacter(args: CreateCharacterEntityInput) {
     const character = await this.charactersService.create(args);
     return JSON.stringify(character, null, 2);
   }
@@ -85,7 +85,7 @@ export class CharactersTool {
     }),
     annotations: { readOnlyHint: false },
   })
-  async updateCharacter(args: UpdateCharacterInput) {
+  async updateCharacter(args: UpdateCharacterEntityInput) {
     const character = await this.charactersService.update(args);
     return JSON.stringify(character, null, 2);
   }

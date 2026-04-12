@@ -6,6 +6,20 @@ alwaysApply: false
 
 # Entity Conventions
 
+## Class Naming
+
+Entity classes must be suffixed with `Entity` (e.g. `CharacterEntity`, `ChatEntity`). Never use the bare domain name as the class name.
+
+```typescript
+// ❌ BAD
+export class Character { ... }
+
+// ✅ GOOD
+export class CharacterEntity { ... }
+```
+
+The `Entity` suffix also carries through to input types: `CreateCharacterEntityInput`, `UpdateCharacterEntityInput`.
+
 ## Primary Key
 
 Always use `@PrimaryGeneratedColumn('uuid')` with type `string`. Never use auto-increment integer ids.
@@ -17,7 +31,7 @@ Every entity must include `createdAt` and `updatedAt` fields using TypeORM's `@C
 ```typescript
 // ❌ BAD — integer id, missing timestamp fields
 @Entity('characters')
-export class Character {
+export class CharacterEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -29,7 +43,7 @@ export class Character {
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('characters')
-export class Character {
+export class CharacterEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -46,22 +60,22 @@ export class Character {
 
 ## Input Types
 
-Every entity file must export a `Create<Entity>Input` and `Update<Entity>Input` type at the bottom of the file, after the entity class. `CreateInput` omits auto-generated fields (`id`, `createdAt`, `updatedAt`). `UpdateInput` omits only timestamps (`createdAt`, `updatedAt`), makes the remaining fields optional via `Partial`, and always requires `id`.
+Every entity file must export a `Create<Name>EntityInput` and `Update<Name>EntityInput` type at the bottom of the file, after the entity class. `CreateInput` omits auto-generated fields (`id`, `createdAt`, `updatedAt`). `UpdateInput` omits only timestamps (`createdAt`, `updatedAt`), makes the remaining fields optional via `Partial`, and always requires `id`.
 
 ```typescript
 // ❌ BAD — no input types exported from entity file
 
 // ❌ BAD — input types defined in a separate file or DTO
 // character.dto.ts
-export type CreateCharacterInput = { ... };
+export type CreateCharacterEntityInput = { ... };
 
 // ✅ GOOD — at the bottom of character.entity.ts
-export type CreateCharacterInput = Omit<
-  Character,
+export type CreateCharacterEntityInput = Omit<
+  CharacterEntity,
   'id' | 'createdAt' | 'updatedAt'
 >;
-export type UpdateCharacterInput = Partial<
-  Omit<Character, 'createdAt' | 'updatedAt'>
+export type UpdateCharacterEntityInput = Partial<
+  Omit<CharacterEntity, 'createdAt' | 'updatedAt'>
 > & { id: string };
 ```
 
@@ -78,7 +92,7 @@ sex: 'male' | 'female' | 'non_binary';
 // character.entity.ts
 export enum Sex { Male = 'male' }
 @Entity('characters')
-export class Character { ... }
+export class CharacterEntity { ... }
 
 // ✅ GOOD — enum in a separate file
 // character.enum.ts

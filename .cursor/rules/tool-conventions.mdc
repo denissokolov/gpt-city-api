@@ -8,7 +8,7 @@ alwaysApply: false
 
 ## Use Entity Input Types
 
-Tool handler methods must use `Create<Entity>Input` and `Update<Entity>Input` from the entity file for their argument types instead of duplicating fields inline.
+Tool handler methods must use `Create<Name>EntityInput` and `Update<Name>EntityInput` from the entity file for their argument types instead of duplicating fields inline.
 
 ```typescript
 // ❌ BAD — fields duplicated in the handler signature
@@ -23,14 +23,14 @@ async createCharacter(args: {
 }) { ... }
 
 // ✅ GOOD — reuse the entity input type
-import { CreateCharacterInput } from './character.entity';
+import { CreateCharacterEntityInput } from './character.entity';
 
-async createCharacter(args: CreateCharacterInput) { ... }
+async createCharacter(args: CreateCharacterEntityInput) { ... }
 
 // ✅ GOOD — update handler
-import { UpdateCharacterInput } from './character.entity';
+import { UpdateCharacterEntityInput } from './character.entity';
 
-async updateCharacter({ id, ...dto }: UpdateCharacterInput) { ... }
+async updateCharacter({ id, ...dto }: UpdateCharacterEntityInput) { ... }
 ```
 
 ## Zod: Preferred Methods

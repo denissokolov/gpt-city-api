@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
-import { Character } from './character.entity';
+import { CharacterEntity } from './character.entity';
 import { Provider, Sex } from './character.enum';
 import { CharactersController } from './characters.controller';
 import { CharactersService } from './characters.service';
 
-const mockCharacter: Character = {
+const mockCharacter: CharacterEntity = {
   id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   firstName: 'Albert',
   lastName: 'Einstein',
