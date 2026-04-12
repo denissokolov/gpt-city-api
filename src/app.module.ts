@@ -6,6 +6,8 @@ import { CharactersModule } from './modules/characters/characters.module';
 import { CharactersTool } from './modules/characters/characters.tool';
 import { ChatsModule } from './modules/chats/chats.module';
 import { HealthModule } from './modules/health/health.module';
+import { LocationsModule } from './modules/locations/locations.module';
+import { LocationsTool } from './modules/locations/locations.tool';
 
 @Module({
   imports: [
@@ -14,6 +16,7 @@ import { HealthModule } from './modules/health/health.module';
     HealthModule,
     CharactersModule,
     ChatsModule,
+    LocationsModule,
     McpModule.forRoot({
       name: 'gpt-city',
       version: '0.0.1',
@@ -23,6 +26,6 @@ import { HealthModule } from './modules/health/health.module';
         'update their personalities, list them, or remove them from the city.',
     }),
   ],
-  providers: [CharactersTool],
+  providers: [CharactersTool, LocationsTool],
 })
 export class AppModule {}

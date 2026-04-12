@@ -12,6 +12,7 @@ import { ConfigurationService } from './common/configuration/configuration.servi
 import { CharactersModule } from './modules/characters/characters.module';
 import { ChatsModule } from './modules/chats/chats.module';
 import { HealthModule } from './modules/health/health.module';
+import { LocationsModule } from './modules/locations/locations.module';
 
 const mcpTagDescription = `
 This server exposes an [MCP](https://modelcontextprotocol.io/) endpoint that AI
@@ -26,6 +27,14 @@ clients (Cursor, Claude Desktop, etc.) can connect to.
 | \`create-character\` | Create a new character |
 | \`update-character\` | Update an existing character |
 | \`delete-character\` | Delete a character |
+| \`list-locations\` | List all locations in the city |
+| \`get-location\` | Get a single location by ID |
+| \`create-location\` | Create a new location |
+| \`update-location\` | Update an existing location |
+| \`delete-location\` | Delete a location |
+| \`create-place\` | Create a place within a location |
+| \`update-place\` | Update an existing place |
+| \`delete-place\` | Delete a place |
 
 ## Connecting
 
@@ -72,13 +81,13 @@ async function bootstrap() {
     .setDescription(
       'GPT City is a simulation game where a city is inhabited by AI-driven characters, ' +
         'each with their own personality, backstory, and role in the community. ' +
-        'This API provides endpoints for querying city inhabitants and monitoring service health.',
+        'This API provides endpoints for managing characters, locations, places, chats, and monitoring service health.',
     )
     .setVersion(configService.getServerVersion())
     .addTag('mcp', mcpTagDescription)
     .build();
   const document = SwaggerModule.createDocument(app, config, {
-    include: [HealthModule, CharactersModule, ChatsModule],
+    include: [HealthModule, CharactersModule, ChatsModule, LocationsModule],
   });
 
   app.use('/api', apiReference({ content: document, withFastify: true }));
