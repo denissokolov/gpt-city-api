@@ -44,6 +44,27 @@ export class Character {
 }
 ```
 
+## Input Types
+
+Every entity file must export a `Create<Entity>Input` and `Update<Entity>Input` type at the bottom of the file, after the entity class. `CreateInput` omits auto-generated fields (`id`, `createdAt`, `updatedAt`). `UpdateInput` omits only timestamps (`createdAt`, `updatedAt`), makes the remaining fields optional via `Partial`, and always requires `id`.
+
+```typescript
+// ❌ BAD — no input types exported from entity file
+
+// ❌ BAD — input types defined in a separate file or DTO
+// character.dto.ts
+export type CreateCharacterInput = { ... };
+
+// ✅ GOOD — at the bottom of character.entity.ts
+export type CreateCharacterInput = Omit<
+  Character,
+  'id' | 'createdAt' | 'updatedAt'
+>;
+export type UpdateCharacterInput = Partial<
+  Omit<Character, 'createdAt' | 'updatedAt'>
+> & { id: string };
+```
+
 ## Enums
 
 Use TypeScript `enum` for columns with a fixed set of values. Place all enums for an entity in a single `<entity>.enum.ts` file alongside the entity and import them. Reference the enum in both the `@Column` decorator and the property type.

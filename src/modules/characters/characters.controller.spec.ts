@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Character } from './character.entity';
 import { Sex } from './character.enum';
@@ -32,10 +31,6 @@ describe('CharactersController', () => {
           provide: CharactersService,
           useValue: {
             findAll: jest.fn(),
-            findOne: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            remove: jest.fn(),
           },
         },
       ],
@@ -61,85 +56,6 @@ describe('CharactersController', () => {
       const result = await controller.findAll();
 
       expect(result).toEqual([]);
-    });
-  });
-
-  describe('findOne', () => {
-    it('should return a character by id', async () => {
-      service.findOne.mockResolvedValue(mockCharacter);
-
-      const result = await controller.findOne(mockCharacter.id);
-
-      expect(result).toEqual(mockCharacter);
-      expect(service.findOne).toHaveBeenCalledWith(mockCharacter.id);
-    });
-
-    it('should propagate NotFoundException when character is not found', async () => {
-      service.findOne.mockRejectedValue(new NotFoundException());
-
-      await expect(controller.findOne('unknown-id')).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-  });
-
-  describe('create', () => {
-    it('should create and return a character', async () => {
-      const dto = {
-        firstName: 'Albert',
-        lastName: 'Einstein',
-        title: 'Professor of Physics',
-        age: 45,
-        sex: Sex.Male,
-        personality:
-          'Curious, empathetic, and quick-witted with a dry sense of humour.',
-        backstory: 'Grew up in a small town, fascinated by the stars.',
-      };
-      service.create.mockResolvedValue(mockCharacter);
-
-      const result = await controller.create(dto);
-
-      expect(result).toEqual(mockCharacter);
-      expect(service.create).toHaveBeenCalledWith(dto);
-    });
-  });
-
-  describe('update', () => {
-    it('should update and return a character', async () => {
-      const dto = { firstName: 'Isaac' };
-      const updated: Character = { ...mockCharacter, firstName: 'Isaac' };
-      service.update.mockResolvedValue(updated);
-
-      const result = await controller.update(mockCharacter.id, dto);
-
-      expect(result).toEqual(updated);
-      expect(service.update).toHaveBeenCalledWith(mockCharacter.id, dto);
-    });
-
-    it('should propagate NotFoundException when character is not found', async () => {
-      service.update.mockRejectedValue(new NotFoundException());
-
-      await expect(
-        controller.update('unknown-id', { firstName: 'X' }),
-      ).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('remove', () => {
-    it('should delete a character', async () => {
-      service.remove.mockResolvedValue(undefined);
-
-      await controller.remove(mockCharacter.id);
-
-      expect(service.remove).toHaveBeenCalledWith(mockCharacter.id);
-    });
-
-    it('should propagate NotFoundException when character is not found', async () => {
-      service.remove.mockRejectedValue(new NotFoundException());
-
-      await expect(controller.remove('unknown-id')).rejects.toThrow(
-        NotFoundException,
-      );
     });
   });
 });

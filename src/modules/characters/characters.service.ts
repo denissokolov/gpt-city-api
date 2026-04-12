@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Character } from './character.entity';
-import { CreateCharacterDto } from './character.dto';
-import { UpdateCharacterDto } from './character.dto';
+import {
+  Character,
+  CreateCharacterInput,
+  UpdateCharacterInput,
+} from './character.entity';
 
 @Injectable()
 export class CharactersService {
@@ -24,13 +26,13 @@ export class CharactersService {
     return character;
   }
 
-  create(dto: CreateCharacterDto): Promise<Character> {
+  create(dto: CreateCharacterInput): Promise<Character> {
     const character = this.characterRepository.create(dto);
     return this.characterRepository.save(character);
   }
 
-  async update(id: string, dto: UpdateCharacterDto): Promise<Character> {
-    const character = await this.findOne(id);
+  async update(dto: UpdateCharacterInput): Promise<Character> {
+    const character = await this.findOne(dto.id);
     Object.assign(character, dto);
     return this.characterRepository.save(character);
   }

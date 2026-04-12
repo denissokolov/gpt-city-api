@@ -39,3 +39,11 @@ export class Character {
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }
+
+export type CreateCharacterInput = Omit<
+  Character,
+  'id' | 'createdAt' | 'updatedAt'
+>;
+export type UpdateCharacterInput = Partial<
+  Omit<Character, 'createdAt' | 'updatedAt'>
+> & { id: string };

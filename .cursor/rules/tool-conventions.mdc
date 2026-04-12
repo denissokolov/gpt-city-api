@@ -1,0 +1,57 @@
+---
+description: MCP tool class conventions — parameter types and Zod usage
+globs: src/**/*.tool.ts
+alwaysApply: false
+---
+
+# Tool Conventions
+
+## Use Entity Input Types
+
+Tool handler methods must use `Create<Entity>Input` and `Update<Entity>Input` from the entity file for their argument types instead of duplicating fields inline.
+
+```typescript
+// ❌ BAD — fields duplicated in the handler signature
+async createCharacter(args: {
+  firstName: string;
+  lastName: string;
+  title: string;
+  age: number;
+  sex: Sex;
+  personality: string;
+  backstory: string;
+}) { ... }
+
+// ✅ GOOD — reuse the entity input type
+import { CreateCharacterInput } from './character.entity';
+
+async createCharacter(args: CreateCharacterInput) { ... }
+
+// ✅ GOOD — update handler
+import { UpdateCharacterInput } from './character.entity';
+
+async updateCharacter({ id, ...dto }: UpdateCharacterInput) { ... }
+```
+
+## Zod: Preferred Methods
+
+Use the modern Zod methods. Never use their deprecated equivalents.
+
+| ✅ Use | ❌ Deprecated |
+|---|---|
+| `z.uuid()` | `z.string().uuid()` |
+| `z.enum(MyEnum)` | `z.nativeEnum(MyEnum)` |
+
+```typescript
+// ❌ BAD
+parameters: z.object({
+  id: z.string().uuid(),
+  sex: z.nativeEnum(Sex),
+})
+
+// ✅ GOOD
+parameters: z.object({
+  id: z.uuid(),
+  sex: z.enum(Sex),
+})
+```

@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { Tool } from '@rekog/mcp-nest';
 import { z } from 'zod';
 import { Sex } from './character.enum';
+import type {
+  CreateCharacterInput,
+  UpdateCharacterInput,
+} from './character.entity';
 import { CharactersService } from './characters.service';
 
 @Injectable()
@@ -43,7 +47,7 @@ export class CharactersTool {
         .max(255)
         .describe('Title or role in the city (e.g. "Professor of Physics")'),
       age: z.int().min(0).describe('Age of the character in years'),
-      sex: z.nativeEnum(Sex).describe('Sex of the character'),
+      sex: z.enum(Sex).describe('Sex of the character'),
       personality: z.string().describe('Personality description'),
       backstory: z
         .string()
@@ -51,15 +55,7 @@ export class CharactersTool {
     }),
     annotations: { readOnlyHint: false },
   })
-  async createCharacter(args: {
-    firstName: string;
-    lastName: string;
-    title: string;
-    age: number;
-    sex: Sex;
-    personality: string;
-    backstory: string;
-  }) {
+  async createCharacter(args: CreateCharacterInput) {
     const character = await this.charactersService.create(args);
     return JSON.stringify(character, null, 2);
   }
@@ -68,12 +64,12 @@ export class CharactersTool {
     name: 'update-character',
     description: 'Update an existing character by ID',
     parameters: z.object({
-      id: z.string().uuid().describe('UUID of the character to update'),
+      id: z.uuid().describe('UUID of the character to update'),
       firstName: z.string().max(255).optional().describe('New first name'),
       lastName: z.string().max(255).optional().describe('New last name'),
       title: z.string().max(255).optional().describe('New title or role'),
       age: z.int().min(0).optional().describe('New age'),
-      sex: z.nativeEnum(Sex).optional().describe('New sex'),
+      sex: z.enum(Sex).optional().describe('New sex'),
       personality: z
         .string()
         .optional()
@@ -82,20 +78,8 @@ export class CharactersTool {
     }),
     annotations: { readOnlyHint: false },
   })
-  async updateCharacter({
-    id,
-    ...dto
-  }: {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-    title?: string;
-    age?: number;
-    sex?: Sex;
-    personality?: string;
-    backstory?: string;
-  }) {
-    const character = await this.charactersService.update(id, dto);
+  async updateCharacter(args: UpdateCharacterInput) {
+    const character = await this.charactersService.update(args);
     return JSON.stringify(character, null, 2);
   }
 
@@ -103,7 +87,7 @@ export class CharactersTool {
     name: 'delete-character',
     description: 'Delete a character by ID',
     parameters: z.object({
-      id: z.string().uuid().describe('UUID of the character to delete'),
+      id: z.uuid().describe('UUID of the character to delete'),
     }),
     annotations: { readOnlyHint: false, destructiveHint: true },
   })

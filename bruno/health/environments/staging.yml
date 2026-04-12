@@ -1,4 +1,0 @@
-name: staging
-variables:
-  - name: host
-    value: https://gpt-city-api-5950170b319a.herokuapp.com
