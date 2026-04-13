@@ -2,14 +2,22 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { PlaceEntity } from '../locations/place.entity';
 
 @Entity('chats')
 export class ChatEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @ManyToOne(() => PlaceEntity, { onDelete: 'CASCADE' })
+  place: PlaceEntity;
+
+  @Column('uuid')
+  placeId: string;
 
   @Column('uuid', { array: true })
   characterIds: string[];
@@ -26,8 +34,8 @@ export class ChatEntity {
 
 export type CreateChatEntityInput = Omit<
   ChatEntity,
-  'id' | 'createdAt' | 'updatedAt'
+  'id' | 'place' | 'createdAt' | 'updatedAt'
 >;
 export type UpdateChatEntityInput = Partial<
-  Omit<ChatEntity, 'createdAt' | 'updatedAt'>
+  Omit<ChatEntity, 'place' | 'createdAt' | 'updatedAt'>
 > & { id: string };

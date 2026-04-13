@@ -11,13 +11,14 @@ import { ChatEntity } from '../../src/modules/chats/chat.entity';
 import { ChatsController } from '../../src/modules/chats/chats.controller';
 import { ChatsService } from '../../src/modules/chats/chats.service';
 
-const mockChat: ChatEntity = {
+const mockChat = {
   id: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
+  placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
   characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
   summary: null,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-};
+} as ChatEntity;
 
 const mockRepository = {
   find: jest.fn(),
@@ -65,27 +66,52 @@ describe('ChatsController (e2e)', () => {
         .post('/chats')
         .send({
           characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
+          placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
         })
         .expect(201)
         .expect((res) => {
           const body = res.body as ChatDto;
           expect(body.id).toBe(mockChat.id);
           expect(body.characterIds).toEqual(mockChat.characterIds);
+          expect(body.placeId).toBe(mockChat.placeId);
           expect(body.summary).toBeNull();
         });
+    });
+
+    it('should return 400 when placeId is missing', () => {
+      return request(app.getHttpServer())
+        .post('/chats')
+        .send({ characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'] })
+        .expect(400);
     });
 
     it('should return 400 when characterIds is empty', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .send({ characterIds: [] })
+        .send({
+          characterIds: [],
+          placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
+        })
         .expect(400);
     });
 
     it('should return 400 when characterIds contains invalid UUIDs', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .send({ characterIds: ['not-a-uuid'] })
+        .send({
+          characterIds: ['not-a-uuid'],
+          placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
+        })
+        .expect(400);
+    });
+
+    it('should return 400 when placeId is not a valid UUID', () => {
+      return request(app.getHttpServer())
+        .post('/chats')
+        .send({
+          characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
+          placeId: 'not-a-uuid',
+        })
         .expect(400);
     });
 

@@ -15,6 +15,12 @@ export class ChatDto {
   characterIds: string[];
 
   @ApiProperty({
+    description: 'ID of the place where this chat takes place',
+    example: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
+  })
+  placeId: string;
+
+  @ApiProperty({
     description: 'Summary of the chat conversation',
     example: 'Discussed the weather and weekend plans.',
     nullable: true,
@@ -31,4 +37,11 @@ export class CreateChatDto {
   @ArrayNotEmpty()
   @IsUUID('all', { each: true })
   characterIds: string[];
+
+  @ApiProperty({
+    description: 'ID of the place where this chat takes place',
+    example: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
+  })
+  @IsUUID('all')
+  placeId: string;
 }
