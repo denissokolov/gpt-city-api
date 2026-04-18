@@ -14,10 +14,12 @@ import { ChatsController } from '../../src/modules/chats/chats.controller';
 import { ChatsService } from '../../src/modules/chats/chats.service';
 import { MessageEntity } from '../../src/modules/chats/message.entity';
 import { LocationFacade } from '../../src/modules/locations/location.facade';
+import { UserFacade } from '../../src/modules/users/user.facade';
 
 const mockChat = {
   id: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
   placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
+  userId: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
   characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
   summary: null,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -46,6 +48,10 @@ const mockCharacterFacade = {
 
 const mockLocationFacade = {
   findPlace: jest.fn(),
+};
+
+const mockUserFacade = {
+  findOne: jest.fn(),
 };
 
 const mockChatPromptHelper = {
@@ -79,6 +85,10 @@ describe('ChatsController (e2e)', () => {
           useValue: mockLocationFacade,
         },
         {
+          provide: UserFacade,
+          useValue: mockUserFacade,
+        },
+        {
           provide: ChatPromptHelper,
           useValue: mockChatPromptHelper,
         },
@@ -98,8 +108,15 @@ describe('ChatsController (e2e)', () => {
   });
 
   describe('POST /chats', () => {
+    const validBody = {
+      characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
+      placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
+      userId: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
+    };
+
     it('should create a chat and return 201', async () => {
       mockLocationFacade.findPlace.mockResolvedValue({ id: mockChat.placeId });
+      mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
       mockCharacterFacade.findByIds.mockResolvedValue(
         mockChat.characterIds.map((id) => ({ id })),
       );
@@ -108,16 +125,14 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
-        .send({
-          characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
-          placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
-        })
+        .send(validBody)
         .expect(201)
         .expect((res) => {
           const body = res.body as ChatDto;
           expect(body.id).toBe(mockChat.id);
           expect(body.characterIds).toEqual(mockChat.characterIds);
           expect(body.placeId).toBe(mockChat.placeId);
+          expect(body.userId).toBe(mockChat.userId);
           expect(body.summary).toBeNull();
         });
     });
@@ -129,60 +144,70 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
-        .send({
-          characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
-          placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
-        })
+        .send(validBody)
+        .expect(404);
+    });
+
+    it('should return 404 when the user does not exist', async () => {
+      mockLocationFacade.findPlace.mockResolvedValue({ id: mockChat.placeId });
+      mockUserFacade.findOne.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
+
+      return request(app.getHttpServer())
+        .post('/chats')
+        .send(validBody)
         .expect(404);
     });
 
     it('should return 404 when a characterId does not exist', async () => {
       mockLocationFacade.findPlace.mockResolvedValue({ id: mockChat.placeId });
+      mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
       mockCharacterFacade.findByIds.mockResolvedValue([]);
 
       return request(app.getHttpServer())
         .post('/chats')
-        .send({
-          characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
-          placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
-        })
+        .send(validBody)
         .expect(404);
     });
 
     it('should return 400 when placeId is missing', () => {
+      const body = { ...validBody };
+      delete (body as Partial<typeof validBody>).placeId;
+      return request(app.getHttpServer()).post('/chats').send(body).expect(400);
+    });
+
+    it('should return 400 when userId is missing', () => {
+      const body = { ...validBody };
+      delete (body as Partial<typeof validBody>).userId;
+      return request(app.getHttpServer()).post('/chats').send(body).expect(400);
+    });
+
+    it('should return 400 when userId is not a valid UUID', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .send({ characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'] })
+        .send({ ...validBody, userId: 'not-a-uuid' })
         .expect(400);
     });
 
     it('should return 400 when characterIds is empty', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .send({
-          characterIds: [],
-          placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
-        })
+        .send({ ...validBody, characterIds: [] })
         .expect(400);
     });
 
     it('should return 400 when characterIds contains invalid UUIDs', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .send({
-          characterIds: ['not-a-uuid'],
-          placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
-        })
+        .send({ ...validBody, characterIds: ['not-a-uuid'] })
         .expect(400);
     });
 
     it('should return 400 when placeId is not a valid UUID', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .send({
-          characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
-          placeId: 'not-a-uuid',
-        })
+        .send({ ...validBody, placeId: 'not-a-uuid' })
         .expect(400);
     });
 

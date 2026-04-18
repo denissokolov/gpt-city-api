@@ -27,6 +27,12 @@ export class ChatDto {
   placeId: string;
 
   @ApiProperty({
+    description: 'ID of the user who owns the chat',
+    example: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
+  })
+  userId: string;
+
+  @ApiProperty({
     description: 'Summary of the chat conversation',
     example: 'Discussed the weather and weekend plans.',
     nullable: true,
@@ -50,9 +56,23 @@ export class CreateChatDto {
   })
   @IsUUID('all')
   placeId: string;
+
+  @ApiProperty({
+    description: 'ID of the user who owns the chat',
+    example: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
+  })
+  @IsUUID('all')
+  userId: string;
 }
 
 export class SendMessageDto {
+  @ApiProperty({
+    description: 'ID of the user who owns the chat',
+    example: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
+  })
+  @IsUUID('all')
+  userId: string;
+
   @ApiProperty({
     description: 'The message sent by the user',
     example: 'Hello, how are you?',

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ModelMessage, streamText } from 'ai';
@@ -8,6 +12,7 @@ import { MessageEntity } from './message.entity';
 import { MessageRole } from './message.enum';
 import { CharacterFacade } from '../characters/character.facade';
 import { LocationFacade } from '../locations/location.facade';
+import { UserFacade } from '../users/user.facade';
 import { SendMessageDto } from './chat.dto';
 import { ChatPromptHelper } from './chatPrompt.helper';
 
@@ -22,6 +27,7 @@ export class ChatsService {
     private readonly messageRepository: Repository<MessageEntity>,
     private readonly characterFacade: CharacterFacade,
     private readonly locationFacade: LocationFacade,
+    private readonly userFacade: UserFacade,
     private readonly chatPromptHelper: ChatPromptHelper,
   ) {}
 
@@ -30,6 +36,8 @@ export class ChatsService {
     if (!place) {
       throw new NotFoundException(`Place with id "${dto.placeId}" not found`);
     }
+
+    await this.userFacade.findOne(dto.userId);
 
     const characters = await this.characterFacade.findByIds(dto.characterIds);
     if (characters.length !== dto.characterIds.length) {
@@ -45,23 +53,32 @@ export class ChatsService {
   }
 
   async sendMessage(
-    id: string,
+    chatId: string,
     dto: SendMessageDto,
   ): Promise<ReturnType<typeof streamText>> {
-    const chat = await this.chatRepository.findOne({
-      where: { id },
-      relations: ['place', 'place.location'],
-    });
+    const [chat, user, history] = await Promise.all([
+      this.chatRepository.findOne({
+        where: { id: chatId },
+        relations: ['place', 'place.location'],
+      }),
+      this.userFacade.findOne(dto.userId),
+      this.messageRepository.find({
+        where: { chatId: chatId },
+        order: { createdAt: 'DESC' },
+        take: this.MAX_MESSAGE_HISTORY_LENGTH + 1,
+      }),
+    ]);
     if (!chat) {
-      throw new NotFoundException(`Chat with id "${id}" not found`);
+      throw new NotFoundException(`Chat with id "${chatId}" not found`);
     }
-
-    const history = await this.messageRepository.find({
-      where: { chatId: chat.id },
-      order: { createdAt: 'DESC' },
-      take: this.MAX_MESSAGE_HISTORY_LENGTH + 1,
-    });
-    const hasMoreMessages = history.length > this.MAX_MESSAGE_HISTORY_LENGTH;
+    if (!user) {
+      throw new NotFoundException(`User with id "${dto.userId}" not found`);
+    }
+    if (chat.userId !== user.id) {
+      throw new ForbiddenException(
+        `User with id "${dto.userId}" is not the owner of the chat with id "${chatId}"`,
+      );
+    }
 
     const messages = history
       .slice(0, this.MAX_MESSAGE_HISTORY_LENGTH)
@@ -79,19 +96,21 @@ export class ChatsService {
     await this.messageRepository.save(
       this.messageRepository.create({
         chatId: chat.id,
+        userId: chat.userId,
         role: MessageRole.User,
         content: dto.message,
+        characterId: null,
       }),
     );
 
     const characters = await this.characterFacade.findByIds(chat.characterIds);
     const character = characters[0];
 
-    const userName = 'Denis'; // TODO: get user name from dto
+    const hasMoreMessages = history.length > this.MAX_MESSAGE_HISTORY_LENGTH;
 
     const systemPrompt = this.chatPromptHelper.buildSystemPrompt(
       character,
-      userName,
+      user,
       chat,
       hasMoreMessages,
     );
@@ -110,6 +129,7 @@ export class ChatsService {
         await this.messageRepository.save(
           this.messageRepository.create({
             chatId: chat.id,
+            userId: chat.userId,
             role: MessageRole.Assistant,
             content: text,
             characterId: character.id,
