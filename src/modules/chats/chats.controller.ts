@@ -28,6 +28,21 @@ export class ChatsController {
     @Res() res: FastifyReply,
   ) {
     const stream = await this.chatsService.sendMessage(id, dto);
+
+    // Fastify plugins like @fastify/cors store response headers on the
+    // FastifyReply, not on the underlying Node ServerResponse. The AI SDK
+    // writes the streaming body directly to `res.raw` (and calls
+    // `res.raw.writeHead`), which would otherwise drop those headers — most
+    // notably the CORS headers required by the browser on the streamed body.
+    // Forward the reply-level headers onto the raw response, then hijack so
+    // Fastify doesn't try to send a second response.
+    for (const [name, value] of Object.entries(res.getHeaders())) {
+      if (value !== undefined && !res.raw.hasHeader(name)) {
+        res.raw.setHeader(name, value);
+      }
+    }
+    res.hijack();
+
     stream.pipeUIMessageStreamToResponse(res.raw);
   }
 }
