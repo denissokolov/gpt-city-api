@@ -17,6 +17,37 @@ src/characters/characters.module.ts
 src/modules/characters/characters.module.ts
 ```
 
+## NestJS: cross-module communication via facades only
+Modules must never import internal files (services, repositories, etc.) from other modules. The only allowed cross-module import is the facade. The facade is a thin pass-through layer that delegates every call to its module's internal service — no logic lives in the facade itself.
+
+```typescript
+// ❌ BAD — importing another module's service directly
+import { CharactersService } from '../characters/characters.service';
+
+@Injectable()
+export class ChatsService {
+  constructor(private readonly charactersService: CharactersService) {}
+}
+
+// ✅ GOOD — import only the facade
+import { CharacterFacade } from '../characters/character.facade';
+
+@Injectable()
+export class ChatsService {
+  constructor(private readonly characterFacade: CharacterFacade) {}
+}
+
+// ✅ GOOD — facade is a thin layer, always delegates to the service
+@Injectable()
+export class CharacterFacade {
+  constructor(private readonly charactersService: CharactersService) {}
+
+  findOne(id: string) {
+    return this.charactersService.findOne(id);
+  }
+}
+```
+
 ## NestJS: one class per file
 Never put a `@Module` and a `@Injectable()` service in the same file. Each class gets its own file.
 

@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayNotEmpty, IsArray, IsUUID } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsNotEmpty,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class ChatDto {
   @ApiProperty({
@@ -44,4 +50,14 @@ export class CreateChatDto {
   })
   @IsUUID('all')
   placeId: string;
+}
+
+export class SendMessageDto {
+  @ApiProperty({
+    description: 'The message sent by the user',
+    example: 'Hello, how are you?',
+  })
+  @IsString()
+  @IsNotEmpty()
+  message: string;
 }

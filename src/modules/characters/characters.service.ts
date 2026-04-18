@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import {
   CharacterEntity,
   CreateCharacterEntityInput,
@@ -40,5 +40,9 @@ export class CharactersService {
   async remove(id: string): Promise<void> {
     const character = await this.findOne(id);
     await this.characterRepository.remove(character);
+  }
+
+  async findByIds(ids: string[]): Promise<CharacterEntity[]> {
+    return this.characterRepository.findBy({ id: In(ids) });
   }
 }
