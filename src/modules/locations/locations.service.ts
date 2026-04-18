@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import { CharacterDto, toCharacterDto } from '../characters/character.dto';
 import { CharacterEntity } from '../characters/character.entity';
 import { LocationStateDto, PlaceStateDto } from './location.dto';
 import {
@@ -13,6 +14,7 @@ import {
   PlaceEntity,
   UpdatePlaceEntityInput,
 } from './place.entity';
+import { PlaceDistributorService } from './placeDistributor.service';
 
 @Injectable()
 export class LocationsService {
@@ -23,6 +25,7 @@ export class LocationsService {
     private readonly placeRepository: Repository<PlaceEntity>,
     @InjectRepository(CharacterEntity)
     private readonly characterRepository: Repository<CharacterEntity>,
+    private readonly placeDistributorService: PlaceDistributorService,
   ) {}
 
   findAll(): Promise<LocationEntity[]> {
@@ -40,22 +43,38 @@ export class LocationsService {
     return location;
   }
 
-  async getState(id: string): Promise<LocationStateDto> {
+  async getState(id: string, userTime: string): Promise<LocationStateDto> {
     const location = await this.findOne(id);
+
+    const distribution =
+      await this.placeDistributorService.distributeCharacters(
+        location,
+        userTime,
+      );
+
+    const charactersById = new Map(
+      location.characters.map((character) => [character.id, character]),
+    );
+
+    const charactersByPlaceId = new Map<string, CharacterDto[]>(
+      distribution.map((entry) => [
+        entry.placeId,
+        entry.charactersIds
+          .map((characterId) => charactersById.get(characterId))
+          .filter(
+            (character): character is CharacterEntity =>
+              character !== undefined,
+          )
+          .map((character) => toCharacterDto(character)),
+      ]),
+    );
 
     const places: PlaceStateDto[] = location.places.map((place) => ({
       id: place.id,
       name: place.name,
       description: place.description,
-      characters: [],
+      characters: charactersByPlaceId.get(place.id) ?? [],
     }));
-
-    if (places.length > 0) {
-      for (const character of location.characters) {
-        const randomIndex = Math.floor(Math.random() * places.length);
-        places[randomIndex].characters.push(character);
-      }
-    }
 
     return {
       id: location.id,

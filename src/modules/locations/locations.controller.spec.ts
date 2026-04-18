@@ -89,21 +89,38 @@ describe('LocationsController', () => {
   });
 
   describe('getState', () => {
+    const userTime = '2026-04-19T10:00:00.000Z';
+
     it('should return the location state with places and their characters', async () => {
       service.getState.mockResolvedValue(mockLocationState);
 
-      const result = await controller.getState(mockLocationState.id);
+      const result = await controller.getState(mockLocationState.id, userTime);
 
       expect(result).toEqual(mockLocationState);
       expect(result.places).toHaveLength(1);
       expect(result.places[0].characters).toHaveLength(1);
-      expect(service.getState).toHaveBeenCalledWith(mockLocationState.id);
+      expect(service.getState).toHaveBeenCalledWith(
+        mockLocationState.id,
+        userTime,
+      );
+    });
+
+    it('should forward the user time header to the service', async () => {
+      service.getState.mockResolvedValue(mockLocationState);
+
+      await controller.getState(mockLocationState.id, userTime);
+
+      expect(service.getState).toHaveBeenCalledTimes(1);
+      expect(service.getState).toHaveBeenCalledWith(
+        mockLocationState.id,
+        userTime,
+      );
     });
 
     it('should throw when location is not found', async () => {
       service.getState.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.getState('unknown-id')).rejects.toThrow(
+      await expect(controller.getState('unknown-id', userTime)).rejects.toThrow(
         NotFoundException,
       );
     });

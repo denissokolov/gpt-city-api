@@ -16,6 +16,7 @@ import { Locale } from '../../src/modules/locations/location.enum';
 import { LocationsController } from '../../src/modules/locations/locations.controller';
 import { LocationsService } from '../../src/modules/locations/locations.service';
 import { PlaceEntity } from '../../src/modules/locations/place.entity';
+import { PlaceDistributorService } from '../../src/modules/locations/placeDistributor.service';
 
 const mockLocation: LocationEntity = {
   id: 'd4e5f6a7-b8c9-0123-defa-234567890123',
@@ -82,6 +83,10 @@ const mockCharacterRepository = {
   findBy: jest.fn(),
 };
 
+const mockPlaceDistributorService = {
+  distributeCharacters: jest.fn(),
+};
+
 describe('LocationsController (e2e)', () => {
   let app: NestFastifyApplication;
 
@@ -103,6 +108,10 @@ describe('LocationsController (e2e)', () => {
         {
           provide: getRepositoryToken(CharacterEntity),
           useValue: mockCharacterRepository,
+        },
+        {
+          provide: PlaceDistributorService,
+          useValue: mockPlaceDistributorService,
         },
       ],
     }).compile();
@@ -146,11 +155,20 @@ describe('LocationsController (e2e)', () => {
   });
 
   describe('GET /locations/:id/state', () => {
+    const userTime = '2026-04-19T10:00:00.000Z';
+
     it('should return the location state with characters distributed across places', async () => {
       mockLocationRepository.findOne.mockResolvedValue(mockLocation);
+      mockPlaceDistributorService.distributeCharacters.mockResolvedValue([
+        {
+          placeId: mockLocation.places[0].id,
+          charactersIds: [mockLocation.characters[0].id],
+        },
+      ]);
 
       return request(app.getHttpServer())
         .get(`/locations/${mockLocation.id}/state`)
+        .set('x-user-time', userTime)
         .expect(200)
         .expect((res) => {
           const body = res.body as LocationStateDto;
@@ -166,7 +184,24 @@ describe('LocationsController (e2e)', () => {
         });
     });
 
-    it('should place every character into some place when multiple places exist', async () => {
+    it('should forward the x-user-time header to the distributor', async () => {
+      mockLocationRepository.findOne.mockResolvedValue(mockLocation);
+      mockPlaceDistributorService.distributeCharacters.mockResolvedValue([]);
+
+      await request(app.getHttpServer())
+        .get(`/locations/${mockLocation.id}/state`)
+        .set('x-user-time', userTime)
+        .expect(200);
+
+      expect(
+        mockPlaceDistributorService.distributeCharacters,
+      ).toHaveBeenCalledTimes(1);
+      const firstCall = mockPlaceDistributorService.distributeCharacters.mock
+        .calls[0] as unknown[];
+      expect(firstCall[1]).toBe(userTime);
+    });
+
+    it('should distribute characters across multiple places according to the distributor', async () => {
       const extraCharacter = {
         ...mockLocation.characters[0],
         id: 'b2c3d4e5-f6a7-8901-bcde-f23456789012',
@@ -183,9 +218,20 @@ describe('LocationsController (e2e)', () => {
         characters: [...mockLocation.characters, extraCharacter],
         places: [...mockLocation.places, extraPlace],
       });
+      mockPlaceDistributorService.distributeCharacters.mockResolvedValue([
+        {
+          placeId: mockLocation.places[0].id,
+          charactersIds: [mockLocation.characters[0].id],
+        },
+        {
+          placeId: extraPlace.id,
+          charactersIds: [extraCharacter.id],
+        },
+      ]);
 
       return request(app.getHttpServer())
         .get(`/locations/${mockLocation.id}/state`)
+        .set('x-user-time', userTime)
         .expect(200)
         .expect((res) => {
           const body = res.body as LocationStateDto;
@@ -203,9 +249,11 @@ describe('LocationsController (e2e)', () => {
         ...mockLocation,
         places: [],
       });
+      mockPlaceDistributorService.distributeCharacters.mockResolvedValue([]);
 
       return request(app.getHttpServer())
         .get(`/locations/${mockLocation.id}/state`)
+        .set('x-user-time', userTime)
         .expect(200)
         .expect((res) => {
           const body = res.body as LocationStateDto;
@@ -218,6 +266,7 @@ describe('LocationsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .get('/locations/00000000-0000-0000-0000-000000000000/state')
+        .set('x-user-time', userTime)
         .expect(404);
     });
   });

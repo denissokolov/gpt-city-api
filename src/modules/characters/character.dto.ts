@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Provider, Sex } from './character.enum';
+import { CharacterEntity } from './character.entity';
 
 export class CharacterDto {
   @ApiProperty({
@@ -66,4 +67,19 @@ export class CharacterDto {
     example: Provider.OpenAI,
   })
   provider: Provider;
+}
+
+export function toCharacterDto(character: CharacterEntity): CharacterDto {
+  return {
+    id: character.id,
+    firstName: character.firstName,
+    lastName: character.lastName,
+    title: character.title,
+    age: character.age,
+    sex: character.sex,
+    personality: character.personality,
+    backstory: character.backstory,
+    model: character.model,
+    provider: character.provider,
+  };
 }
