@@ -90,7 +90,11 @@ async function bootstrap() {
     include: [HealthModule, CharactersModule, ChatsModule, LocationsModule],
   });
 
-  app.use('/api', apiReference({ content: document, withFastify: true }));
+  app.use('/doc', apiReference({ content: document, withFastify: true }));
+
+  app.getHttpAdapter().get('/openapi.json', (_req, res) => {
+    res.send(document);
+  });
 
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
