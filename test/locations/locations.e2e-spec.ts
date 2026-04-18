@@ -8,8 +8,8 @@ import request from 'supertest';
 import { CharacterEntity } from '../../src/modules/characters/character.entity';
 import { Provider, Sex } from '../../src/modules/characters/character.enum';
 import {
+  LocationStateDto,
   LocationDto,
-  LocationSummaryDto,
 } from '../../src/modules/locations/location.dto';
 import { LocationEntity } from '../../src/modules/locations/location.entity';
 import { Locale } from '../../src/modules/locations/location.enum';
@@ -126,7 +126,7 @@ describe('LocationsController (e2e)', () => {
         .get('/locations')
         .expect(200)
         .expect((res) => {
-          const body = res.body as LocationSummaryDto[];
+          const body = res.body as LocationDto[];
           expect(body).toHaveLength(1);
           expect(body[0].id).toBe(mockLocation.id);
           expect(body[0].name).toBe(mockLocation.name);
@@ -145,18 +145,71 @@ describe('LocationsController (e2e)', () => {
     });
   });
 
-  describe('GET /locations/:id', () => {
-    it('should return a location with characters and places', async () => {
+  describe('GET /locations/:id/state', () => {
+    it('should return the location state with characters distributed across places', async () => {
       mockLocationRepository.findOne.mockResolvedValue(mockLocation);
 
       return request(app.getHttpServer())
-        .get(`/locations/${mockLocation.id}`)
+        .get(`/locations/${mockLocation.id}/state`)
         .expect(200)
         .expect((res) => {
-          const body = res.body as LocationDto;
+          const body = res.body as LocationStateDto;
           expect(body.id).toBe(mockLocation.id);
-          expect(body.characters).toHaveLength(1);
+          expect(body.name).toBe(mockLocation.name);
+          expect(body).not.toHaveProperty('characters');
           expect(body.places).toHaveLength(1);
+          expect(body.places[0].id).toBe(mockLocation.places[0].id);
+          expect(body.places[0].characters).toHaveLength(1);
+          expect(body.places[0].characters[0].id).toBe(
+            mockLocation.characters[0].id,
+          );
+        });
+    });
+
+    it('should place every character into some place when multiple places exist', async () => {
+      const extraCharacter = {
+        ...mockLocation.characters[0],
+        id: 'b2c3d4e5-f6a7-8901-bcde-f23456789012',
+        firstName: 'Marie',
+        lastName: 'Curie',
+      };
+      const extraPlace = {
+        ...mockLocation.places[0],
+        id: 'd4e5f6a7-b8c9-0123-defa-345678901234',
+        name: 'Old Observatory',
+      };
+      mockLocationRepository.findOne.mockResolvedValue({
+        ...mockLocation,
+        characters: [...mockLocation.characters, extraCharacter],
+        places: [...mockLocation.places, extraPlace],
+      });
+
+      return request(app.getHttpServer())
+        .get(`/locations/${mockLocation.id}/state`)
+        .expect(200)
+        .expect((res) => {
+          const body = res.body as LocationStateDto;
+          expect(body.places).toHaveLength(2);
+          const totalCharacters = body.places.reduce(
+            (sum, place) => sum + place.characters.length,
+            0,
+          );
+          expect(totalCharacters).toBe(2);
+        });
+    });
+
+    it('should return empty places array when location has no places', async () => {
+      mockLocationRepository.findOne.mockResolvedValue({
+        ...mockLocation,
+        places: [],
+      });
+
+      return request(app.getHttpServer())
+        .get(`/locations/${mockLocation.id}/state`)
+        .expect(200)
+        .expect((res) => {
+          const body = res.body as LocationStateDto;
+          expect(body.places).toEqual([]);
         });
     });
 
@@ -164,7 +217,7 @@ describe('LocationsController (e2e)', () => {
       mockLocationRepository.findOne.mockResolvedValue(null);
 
       return request(app.getHttpServer())
-        .get('/locations/00000000-0000-0000-0000-000000000000')
+        .get('/locations/00000000-0000-0000-0000-000000000000/state')
         .expect(404);
     });
   });

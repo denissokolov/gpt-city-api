@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { CharacterEntity } from '../characters/character.entity';
+import { LocationStateDto, PlaceStateDto } from './location.dto';
 import {
   CreateLocationEntityInput,
   LocationEntity,
@@ -37,6 +38,32 @@ export class LocationsService {
       throw new NotFoundException(`Location with id "${id}" not found`);
     }
     return location;
+  }
+
+  async getState(id: string): Promise<LocationStateDto> {
+    const location = await this.findOne(id);
+
+    const places: PlaceStateDto[] = location.places.map((place) => ({
+      id: place.id,
+      name: place.name,
+      description: place.description,
+      characters: [],
+    }));
+
+    if (places.length > 0) {
+      for (const character of location.characters) {
+        const randomIndex = Math.floor(Math.random() * places.length);
+        places[randomIndex].characters.push(character);
+      }
+    }
+
+    return {
+      id: location.id,
+      name: location.name,
+      description: location.description,
+      locale: location.locale,
+      places,
+    };
   }
 
   async create(dto: CreateLocationEntityInput): Promise<LocationEntity> {

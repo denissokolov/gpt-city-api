@@ -23,7 +23,7 @@ export class PlaceDto {
   description: string;
 }
 
-export class LocationSummaryDto {
+export class LocationDto {
   @ApiProperty({
     description: 'Unique identifier of the location',
     example: 'd4e5f6a7-b8c9-0123-defa-234567890123',
@@ -51,16 +51,19 @@ export class LocationSummaryDto {
   locale: Locale;
 }
 
-export class LocationDto extends LocationSummaryDto {
+export class PlaceStateDto extends PlaceDto {
   @ApiProperty({
-    description: 'Characters present at this location',
+    description: 'Characters currently present at this place',
     type: [CharacterDto],
   })
   characters: CharacterDto[];
+}
 
+export class LocationStateDto extends LocationDto {
   @ApiProperty({
-    description: 'Places within this location',
-    type: [PlaceDto],
+    description:
+      'Places within this location, each with the characters currently present there',
+    type: [PlaceStateDto],
   })
-  places: PlaceDto[];
+  places: PlaceStateDto[];
 }
