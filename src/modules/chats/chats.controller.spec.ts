@@ -39,11 +39,13 @@ describe('ChatsController', () => {
     it('should create and return a chat', async () => {
       service.create.mockResolvedValue(mockChat);
 
-      const result = await controller.create({
-        characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
-        placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
-        userId: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
-      });
+      const result = await controller.create(
+        'c3d4e5f6-a7b8-4012-bdef-123456789012',
+        {
+          characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
+          placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
+        },
+      );
 
       expect(result).toEqual(mockChat);
       expect(service.create).toHaveBeenCalledWith({

@@ -54,6 +54,7 @@ export class ChatsService {
 
   async sendMessage(
     chatId: string,
+    userId: string,
     dto: SendMessageDto,
   ): Promise<ReturnType<typeof streamText>> {
     const [chat, user, history] = await Promise.all([
@@ -61,7 +62,7 @@ export class ChatsService {
         where: { id: chatId },
         relations: ['place', 'place.location'],
       }),
-      this.userFacade.findOne(dto.userId),
+      this.userFacade.findOne(userId),
       this.messageRepository.find({
         where: { chatId: chatId },
         order: { createdAt: 'DESC' },
@@ -72,11 +73,11 @@ export class ChatsService {
       throw new NotFoundException(`Chat with id "${chatId}" not found`);
     }
     if (!user) {
-      throw new NotFoundException(`User with id "${dto.userId}" not found`);
+      throw new NotFoundException(`User with id "${userId}" not found`);
     }
     if (chat.userId !== user.id) {
       throw new ForbiddenException(
-        `User with id "${dto.userId}" is not the owner of the chat with id "${chatId}"`,
+        `User with id "${userId}" is not the owner of the chat with id "${chatId}"`,
       );
     }
 

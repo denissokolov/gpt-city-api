@@ -108,10 +108,10 @@ describe('ChatsController (e2e)', () => {
   });
 
   describe('POST /chats', () => {
+    const validUserId = 'c3d4e5f6-a7b8-4012-bdef-123456789012';
     const validBody = {
       characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
       placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
-      userId: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
     };
 
     it('should create a chat and return 201', async () => {
@@ -125,6 +125,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
+        .set('x-user-id', validUserId)
         .send(validBody)
         .expect(201)
         .expect((res) => {
@@ -144,6 +145,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
+        .set('x-user-id', validUserId)
         .send(validBody)
         .expect(404);
     });
@@ -156,6 +158,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
+        .set('x-user-id', validUserId)
         .send(validBody)
         .expect(404);
     });
@@ -167,6 +170,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
+        .set('x-user-id', validUserId)
         .send(validBody)
         .expect(404);
     });
@@ -174,25 +178,32 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when placeId is missing', () => {
       const body = { ...validBody };
       delete (body as Partial<typeof validBody>).placeId;
-      return request(app.getHttpServer()).post('/chats').send(body).expect(400);
-    });
-
-    it('should return 400 when userId is missing', () => {
-      const body = { ...validBody };
-      delete (body as Partial<typeof validBody>).userId;
-      return request(app.getHttpServer()).post('/chats').send(body).expect(400);
-    });
-
-    it('should return 400 when userId is not a valid UUID', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .send({ ...validBody, userId: 'not-a-uuid' })
+        .set('x-user-id', validUserId)
+        .send(body)
+        .expect(400);
+    });
+
+    it('should return 400 when x-user-id header is missing', () => {
+      return request(app.getHttpServer())
+        .post('/chats')
+        .send(validBody)
+        .expect(400);
+    });
+
+    it('should return 400 when x-user-id header is not a valid UUID', () => {
+      return request(app.getHttpServer())
+        .post('/chats')
+        .set('x-user-id', 'not-a-uuid')
+        .send(validBody)
         .expect(400);
     });
 
     it('should return 400 when characterIds is empty', () => {
       return request(app.getHttpServer())
         .post('/chats')
+        .set('x-user-id', validUserId)
         .send({ ...validBody, characterIds: [] })
         .expect(400);
     });
@@ -200,6 +211,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when characterIds contains invalid UUIDs', () => {
       return request(app.getHttpServer())
         .post('/chats')
+        .set('x-user-id', validUserId)
         .send({ ...validBody, characterIds: ['not-a-uuid'] })
         .expect(400);
     });
@@ -207,12 +219,17 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when placeId is not a valid UUID', () => {
       return request(app.getHttpServer())
         .post('/chats')
+        .set('x-user-id', validUserId)
         .send({ ...validBody, placeId: 'not-a-uuid' })
         .expect(400);
     });
 
     it('should return 400 when body is empty', () => {
-      return request(app.getHttpServer()).post('/chats').send({}).expect(400);
+      return request(app.getHttpServer())
+        .post('/chats')
+        .set('x-user-id', validUserId)
+        .send({})
+        .expect(400);
     });
   });
 });
