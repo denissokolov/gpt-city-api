@@ -18,6 +18,21 @@ export class ConfigurationService {
     return this.serverVersion;
   }
 
+  getWebOrigin(): string | string[] | boolean {
+    const value = process.env.WEB_ORIGIN;
+    if (value === undefined || value === '') {
+      return true;
+    }
+    if (value === '*') {
+      return true;
+    }
+    const origins = value
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0);
+    return origins.length === 1 ? origins[0] : origins;
+  }
+
   getDatabaseConfig(): TypeOrmModuleOptions {
     return {
       type: 'postgres',

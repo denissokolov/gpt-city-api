@@ -76,6 +76,11 @@ async function bootstrap() {
 
   const configService = app.get(ConfigurationService);
 
+  app.enableCors({
+    origin: configService.getWebOrigin(),
+    credentials: false,
+  });
+
   const config = new DocumentBuilder()
     .setTitle('GPT City API')
     .setDescription(
