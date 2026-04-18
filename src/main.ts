@@ -13,6 +13,7 @@ import { CharactersModule } from './modules/characters/characters.module';
 import { ChatsModule } from './modules/chats/chats.module';
 import { HealthModule } from './modules/health/health.module';
 import { LocationsModule } from './modules/locations/locations.module';
+import { UsersModule } from './modules/users/users.module';
 
 const mcpTagDescription = `
 This server exposes an [MCP](https://modelcontextprotocol.io/) endpoint that AI
@@ -92,7 +93,13 @@ async function bootstrap() {
     .addTag('mcp', mcpTagDescription)
     .build();
   const document = SwaggerModule.createDocument(app, config, {
-    include: [HealthModule, CharactersModule, ChatsModule, LocationsModule],
+    include: [
+      HealthModule,
+      CharactersModule,
+      ChatsModule,
+      LocationsModule,
+      UsersModule,
+    ],
   });
 
   app.use('/doc', apiReference({ content: document, withFastify: true }));
