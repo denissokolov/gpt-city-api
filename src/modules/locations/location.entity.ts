@@ -9,7 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { CharacterEntity } from '../characters/character.entity';
-import { Locale } from './location.enum';
+import { Locale } from '../../common/enums/locale.enum';
 import { PlaceEntity } from './place.entity';
 
 @Entity('locations')

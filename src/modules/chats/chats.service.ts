@@ -116,6 +116,8 @@ export class ChatsService {
       hasMoreMessages,
     );
 
+    console.log(JSON.stringify(messages, null, 2));
+
     return streamText({
       model: `${character.provider}/${character.model}`,
       system: systemPrompt,

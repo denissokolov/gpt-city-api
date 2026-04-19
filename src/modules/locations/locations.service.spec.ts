@@ -5,7 +5,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CharacterEntity } from '../characters/character.entity';
 import { Provider, Sex } from '../characters/character.enum';
-import { Locale } from './location.enum';
+import { Locale } from '../../common/enums/locale.enum';
 import { LocationEntity } from './location.entity';
 import { LocationsService } from './locations.service';
 import { PlaceEntity } from './place.entity';

@@ -3,7 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Provider, Sex } from '../characters/character.enum';
 import { LocationStateDto } from './location.dto';
-import { Locale } from './location.enum';
+import { Locale } from '../../common/enums/locale.enum';
 import { LocationEntity } from './location.entity';
 import { LocationsController } from './locations.controller';
 import { LocationsService } from './locations.service';

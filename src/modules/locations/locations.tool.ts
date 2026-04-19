@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Tool } from '@rekog/mcp-nest';
 import { z } from 'zod';
-import { Locale } from './location.enum';
+import { Locale } from '../../common/enums/locale.enum';
 import type {
   CreateLocationEntityInput,
   UpdateLocationEntityInput,

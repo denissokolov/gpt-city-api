@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { CharacterDto } from '../characters/character.dto';
-import { Locale } from './location.enum';
+import { Locale } from '../../common/enums/locale.enum';
 
 export class PlaceDto {
   @ApiProperty({

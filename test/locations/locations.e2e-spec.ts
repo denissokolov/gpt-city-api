@@ -12,7 +12,7 @@ import {
   LocationDto,
 } from '../../src/modules/locations/location.dto';
 import { LocationEntity } from '../../src/modules/locations/location.entity';
-import { Locale } from '../../src/modules/locations/location.enum';
+import { Locale } from '../../src/common/enums/locale.enum';
 import { LocationsController } from '../../src/modules/locations/locations.controller';
 import { LocationsService } from '../../src/modules/locations/locations.service';
 import { PlaceEntity } from '../../src/modules/locations/place.entity';

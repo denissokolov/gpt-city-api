@@ -1,5 +1,5 @@
 import { LocationEntity } from './location.entity';
-import { Locale } from './location.enum';
+import { Locale } from '../../common/enums/locale.enum';
 import { PlaceDistributorService } from './placeDistributor.service';
 import { Provider, Sex } from '../characters/character.enum';
 
