@@ -109,3 +109,66 @@ export class CreateUserDto {
   @IsOptional()
   backstory: string;
 }
+
+export class UpdateUserDto {
+  @ApiProperty({
+    description: 'New first name of the user',
+    example: 'Ada',
+    required: false,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  firstName?: string;
+
+  @ApiProperty({
+    description: 'New last name of the user',
+    example: 'Lovelace',
+    required: false,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  lastName?: string;
+
+  @ApiProperty({
+    description: 'New age of the user in years',
+    example: 36,
+    required: false,
+  })
+  @IsInt()
+  @Min(0)
+  @Max(150)
+  @IsOptional()
+  age?: number;
+
+  @ApiProperty({
+    description: 'New sex of the user',
+    enum: Sex,
+    example: Sex.Female,
+    required: false,
+  })
+  @IsEnum(Sex)
+  @IsOptional()
+  sex?: Sex;
+
+  @ApiProperty({
+    description: 'New title or role of the user in the city',
+    example: 'Mathematician',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @ApiProperty({
+    description:
+      'New backstory of the user — where they came from and what shaped them',
+    example:
+      'Pioneering mathematician who wrote the first algorithm intended for a machine.',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  backstory?: string;
+}

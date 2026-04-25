@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateUserDto } from './user.dto';
+import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { UserEntity } from './user.entity';
 import { Sex } from './user.enum';
 import { UsersController } from './users.controller';
@@ -31,6 +31,7 @@ describe('UsersController', () => {
           provide: UsersService,
           useValue: {
             create: jest.fn(),
+            update: jest.fn(),
           },
         },
       ],
@@ -57,6 +58,23 @@ describe('UsersController', () => {
       expect(result).toEqual(mockUser);
       expect(service.create).toHaveBeenCalledTimes(1);
       expect(service.create).toHaveBeenCalledWith(dto);
+    });
+  });
+
+  describe('update', () => {
+    it('should update a user and return it', async () => {
+      const dto: UpdateUserDto = {
+        title: 'Senior Mathematician',
+        backstory: 'Updated backstory.',
+      };
+      const updatedUser: UserEntity = { ...mockUser, ...dto };
+      service.update.mockResolvedValue(updatedUser);
+
+      const result = await controller.update(mockUser.id, dto);
+
+      expect(result).toEqual(updatedUser);
+      expect(service.update).toHaveBeenCalledTimes(1);
+      expect(service.update).toHaveBeenCalledWith({ id: mockUser.id, ...dto });
     });
   });
 });

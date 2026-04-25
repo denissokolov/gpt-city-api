@@ -123,4 +123,58 @@ describe('UsersController (e2e)', () => {
         .expect(400);
     });
   });
+
+  describe('PATCH /users/:id', () => {
+    const updateBody = {
+      title: 'Senior Mathematician',
+      backstory: 'Updated backstory.',
+    };
+
+    it('should update a user and return 200', async () => {
+      const updatedUser: UserEntity = { ...mockUser, ...updateBody };
+      mockRepository.findOneBy.mockResolvedValue(mockUser);
+      mockRepository.save.mockResolvedValue(updatedUser);
+
+      return request(app.getHttpServer())
+        .patch(`/users/${mockUser.id}`)
+        .send(updateBody)
+        .expect(200)
+        .expect((res) => {
+          const body = res.body as UserDto;
+          expect(body.id).toBe(mockUser.id);
+          expect(body.title).toBe(updateBody.title);
+          expect(body.backstory).toBe(updateBody.backstory);
+        });
+    });
+
+    it('should return 404 when user does not exist', () => {
+      mockRepository.findOneBy.mockResolvedValue(null);
+
+      return request(app.getHttpServer())
+        .patch(`/users/${mockUser.id}`)
+        .send(updateBody)
+        .expect(404);
+    });
+
+    it('should return 400 when id is not a UUID', () => {
+      return request(app.getHttpServer())
+        .patch('/users/not-a-uuid')
+        .send(updateBody)
+        .expect(400);
+    });
+
+    it('should return 400 when age is negative', () => {
+      return request(app.getHttpServer())
+        .patch(`/users/${mockUser.id}`)
+        .send({ age: -1 })
+        .expect(400);
+    });
+
+    it('should return 400 when sex is not a valid enum value', () => {
+      return request(app.getHttpServer())
+        .patch(`/users/${mockUser.id}`)
+        .send({ sex: 'not-a-sex' })
+        .expect(400);
+    });
+  });
 });

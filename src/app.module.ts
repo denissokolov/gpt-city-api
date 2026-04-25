@@ -10,6 +10,7 @@ import { LocationsModule } from './modules/locations/locations.module';
 import { LocationsTool } from './modules/locations/locations.tool';
 import { SystemChatsModule } from './modules/systemChats/systemChats.module';
 import { UsersModule } from './modules/users/users.module';
+import { UsersTool } from './modules/users/users.tool';
 
 @Module({
   imports: [
@@ -30,6 +31,6 @@ import { UsersModule } from './modules/users/users.module';
         'update their personalities, list them, or remove them from the city.',
     }),
   ],
-  providers: [CharactersTool, LocationsTool],
+  providers: [CharactersTool, LocationsTool, UsersTool],
 })
 export class AppModule {}
