@@ -1,3 +1,5 @@
+import type { ServerResponse } from 'node:http';
+
 import { NotFoundException, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
@@ -7,14 +9,26 @@ import {
 import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
 import { CharacterFacade } from '../../src/modules/characters/character.facade';
+import { ChatActivity } from '../../src/modules/chats/chat.activity.enum';
 import { ChatDto } from '../../src/modules/chats/chat.dto';
 import { ChatEntity } from '../../src/modules/chats/chat.entity';
 import { ChatsController } from '../../src/modules/chats/chats.controller';
 import { ChatsService } from '../../src/modules/chats/chats.service';
 import { MessageEntity } from '../../src/modules/chats/message.entity';
+import { MessageRole } from '../../src/modules/chats/message.enum';
 import { LocationFacade } from '../../src/modules/locations/location.facade';
 import { UserFacade } from '../../src/modules/users/user.facade';
 import { PromptsService } from '../../src/common/prompts/prompts.service';
+
+const mockStreamText = jest.fn();
+const mockGenerateText = jest.fn();
+
+jest.mock('ai', () => ({
+  streamText: (...args: unknown[]) =>
+    (mockStreamText as (...args: unknown[]) => unknown)(...args),
+  generateText: (...args: unknown[]) =>
+    (mockGenerateText as (...args: unknown[]) => unknown)(...args),
+}));
 
 const mockChat = {
   id: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
@@ -28,10 +42,12 @@ const mockChat = {
 
 const mockChatRepository = {
   find: jest.fn(),
+  findOne: jest.fn(),
   findOneBy: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
   remove: jest.fn(),
+  update: jest.fn(),
 };
 
 const mockMessageRepository = {
@@ -44,6 +60,8 @@ const mockMessageRepository = {
 
 const mockCharacterFacade = {
   findByIds: jest.fn(),
+  findMemory: jest.fn(),
+  updateMemory: jest.fn(),
 };
 
 const mockLocationFacade = {
@@ -229,6 +247,181 @@ describe('ChatsController (e2e)', () => {
         .post('/chats')
         .set('x-user-id', validUserId)
         .send({})
+        .expect(400);
+    });
+  });
+
+  describe('POST /chats/:id/message', () => {
+    const validUserId = 'c3d4e5f6-a7b8-4012-bdef-123456789012';
+    const validLocale = 'en-US';
+    const characterId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
+    const mockCharacter = {
+      id: characterId,
+      provider: 'openai',
+      model: 'gpt-4o',
+    };
+
+    const mockChatWithRelations = {
+      ...mockChat,
+      place: {
+        id: mockChat.placeId,
+        name: 'Central Library',
+        description: 'A quiet library.',
+        location: {
+          id: 'l1',
+          name: 'Downtown',
+          description: 'Bustling.',
+          locale: 'en-US',
+        },
+      },
+    } as unknown as ChatEntity;
+
+    function setupHappyPath(history: MessageEntity[] = []) {
+      mockChatRepository.findOne.mockResolvedValue(mockChatWithRelations);
+      mockChatRepository.find.mockResolvedValue([]);
+      mockChatRepository.update.mockResolvedValue({ affected: 1 });
+      mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
+      mockMessageRepository.find.mockResolvedValue(history);
+      mockMessageRepository.create.mockImplementation(
+        (input: Partial<MessageEntity>) => input as MessageEntity,
+      );
+      mockMessageRepository.save.mockImplementation(
+        (entity: MessageEntity) =>
+          ({
+            ...entity,
+            id: 'msg-id',
+            createdAt: new Date('2026-01-02T00:00:00.000Z'),
+            updatedAt: new Date('2026-01-02T00:00:00.000Z'),
+          }) as MessageEntity,
+      );
+      mockCharacterFacade.findByIds.mockResolvedValue([mockCharacter]);
+      mockCharacterFacade.findMemory.mockResolvedValue(null);
+      mockCharacterFacade.updateMemory.mockResolvedValue(undefined);
+      mockPromptsService.render.mockReturnValue('rendered prompt');
+      mockStreamText.mockImplementation(() => ({
+        pipeUIMessageStreamToResponse: (res: ServerResponse) => {
+          res.writeHead(200, { 'content-type': 'text/event-stream' });
+          res.end('streamed-body');
+        },
+      }));
+      mockGenerateText.mockResolvedValue({ text: 'summary' });
+    }
+
+    it('should stream a response when only message is sent', async () => {
+      setupHappyPath();
+
+      await request(app.getHttpServer())
+        .post(`/chats/${mockChat.id}/message`)
+        .set('x-user-id', validUserId)
+        .set('x-locale', validLocale)
+        .send({ message: 'Hello' })
+        .expect(200);
+
+      const savedRoles = mockMessageRepository.create.mock.calls.map(
+        ([input]: [Partial<MessageEntity>]) => input.role,
+      );
+      expect(savedRoles).toContain(MessageRole.User);
+      expect(savedRoles).not.toContain(MessageRole.System);
+    });
+
+    it('should stream a response and persist a system silence message when only activity is sent', async () => {
+      const lastMessageDate = new Date(Date.now() - 5 * 60 * 1000);
+      setupHappyPath([
+        {
+          id: 'prev-msg',
+          chatId: mockChat.id,
+          userId: mockChat.userId,
+          role: MessageRole.Assistant,
+          content: 'Earlier message',
+          characterId,
+          createdAt: lastMessageDate,
+          updatedAt: lastMessageDate,
+        } as MessageEntity,
+      ]);
+
+      await request(app.getHttpServer())
+        .post(`/chats/${mockChat.id}/message`)
+        .set('x-user-id', validUserId)
+        .set('x-locale', validLocale)
+        .send({ activity: ChatActivity.Silence })
+        .expect(200);
+
+      const createCalls = mockMessageRepository.create.mock.calls.map(
+        ([input]: [Partial<MessageEntity>]) => input,
+      );
+      const systemMessage = createCalls.find(
+        (c: Partial<MessageEntity>) => c.role === MessageRole.System,
+      );
+      expect(systemMessage).toBeDefined();
+      expect(systemMessage?.content).toMatch(
+        /^<activity type="silence" durationSeconds="\d+" \/>$/,
+      );
+      expect(systemMessage?.characterId).toBeNull();
+      expect(
+        createCalls.some(
+          (c: Partial<MessageEntity>) => c.role === MessageRole.User,
+        ),
+      ).toBe(false);
+
+      const streamCallArgs = mockStreamText.mock.calls[0] as [
+        { messages: { role: string; content: string }[] },
+      ];
+      const streamArgs = streamCallArgs[0];
+      const lastMessage = streamArgs.messages[streamArgs.messages.length - 1];
+      expect(lastMessage.role).toBe(MessageRole.User);
+      expect(lastMessage.content).toMatch(/^<activity type="silence"/);
+    });
+
+    it('should persist both system and user messages when message and activity are sent together', async () => {
+      setupHappyPath();
+
+      await request(app.getHttpServer())
+        .post(`/chats/${mockChat.id}/message`)
+        .set('x-user-id', validUserId)
+        .set('x-locale', validLocale)
+        .send({ message: 'Hi', activity: ChatActivity.Silence })
+        .expect(200);
+
+      const savedRoles = mockMessageRepository.create.mock.calls.map(
+        ([input]: [Partial<MessageEntity>]) => input.role,
+      );
+      expect(savedRoles).toContain(MessageRole.System);
+      expect(savedRoles).toContain(MessageRole.User);
+    });
+
+    it('should return 400 when neither message nor activity is provided', () => {
+      return request(app.getHttpServer())
+        .post(`/chats/${mockChat.id}/message`)
+        .set('x-user-id', validUserId)
+        .set('x-locale', validLocale)
+        .send({})
+        .expect(400);
+    });
+
+    it('should return 400 when activity is not a known enum value', () => {
+      return request(app.getHttpServer())
+        .post(`/chats/${mockChat.id}/message`)
+        .set('x-user-id', validUserId)
+        .set('x-locale', validLocale)
+        .send({ activity: 'unknown-activity' })
+        .expect(400);
+    });
+
+    it('should return 400 when message is sent as an empty string alongside activity', () => {
+      return request(app.getHttpServer())
+        .post(`/chats/${mockChat.id}/message`)
+        .set('x-user-id', validUserId)
+        .set('x-locale', validLocale)
+        .send({ message: '', activity: ChatActivity.Silence })
+        .expect(400);
+    });
+
+    it('should return 400 when x-locale is missing', () => {
+      return request(app.getHttpServer())
+        .post(`/chats/${mockChat.id}/message`)
+        .set('x-user-id', validUserId)
+        .send({ activity: ChatActivity.Silence })
         .expect(400);
     });
   });

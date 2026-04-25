@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { generateText, ModelMessage, streamText } from 'ai';
 
+import { ChatActivity } from './chat.activity.enum';
 import { ChatEntity, CreateChatEntityInput } from './chat.entity';
 import { MessageEntity } from './message.entity';
 import { MessageRole } from './message.enum';
@@ -112,24 +113,51 @@ export class ChatsService {
         content: m.content,
       }));
 
-    messages.push({
-      role: MessageRole.User,
-      content: dto.message,
-    });
+    let activityContent: string | null = null;
+    if (dto.activity === ChatActivity.Silence) {
+      activityContent = this.buildSilenceMarker(
+        history[0]?.createdAt ?? chat.createdAt,
+      );
+      messages.push({
+        role: MessageRole.User,
+        content: activityContent,
+      });
+    }
 
-    const [memory, characters, userMessage] = await Promise.all([
-      this.characterFacade.findMemory(chat.characterIds[0], user.id),
-      this.characterFacade.findByIds(chat.characterIds),
-      this.messageRepository.save(
-        this.messageRepository.create({
-          chatId: chat.id,
-          userId: chat.userId,
-          role: MessageRole.User,
-          content: dto.message,
-          characterId: null,
-        }),
-      ),
-    ]);
+    if (dto.message) {
+      messages.push({
+        role: MessageRole.User,
+        content: dto.message,
+      });
+    }
+
+    const [memory, characters, activityMessage, userMessage] =
+      await Promise.all([
+        this.characterFacade.findMemory(chat.characterIds[0], user.id),
+        this.characterFacade.findByIds(chat.characterIds),
+        activityContent
+          ? this.messageRepository.save(
+              this.messageRepository.create({
+                chatId: chat.id,
+                userId: chat.userId,
+                role: MessageRole.User,
+                content: activityContent,
+                characterId: null,
+              }),
+            )
+          : Promise.resolve(null),
+        dto.message
+          ? this.messageRepository.save(
+              this.messageRepository.create({
+                chatId: chat.id,
+                userId: chat.userId,
+                role: MessageRole.User,
+                content: dto.message,
+                characterId: null,
+              }),
+            )
+          : Promise.resolve(null),
+      ]);
 
     const character = characters[0];
 
@@ -171,7 +199,8 @@ export class ChatsService {
         );
         const fullHistory = [
           ...history.slice(0, this.MAX_MESSAGE_HISTORY_LENGTH).reverse(),
-          userMessage,
+          ...(activityMessage ? [activityMessage] : []),
+          ...(userMessage ? [userMessage] : []),
           assistantMessage,
         ];
         await Promise.all([
@@ -187,6 +216,14 @@ export class ChatsService {
         ]);
       },
     });
+  }
+
+  private buildSilenceMarker(referenceDate: Date): string {
+    const durationSeconds = Math.max(
+      0,
+      Math.floor((Date.now() - referenceDate.getTime()) / 1000),
+    );
+    return `<activity type="silence" durationSeconds="${durationSeconds}" />`;
   }
 
   private async updateChatSummary(

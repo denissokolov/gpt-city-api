@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
+import type { FastifyReply } from 'fastify';
+
+import { Locale } from '../../common/enums/locale.enum';
+import { ChatActivity } from './chat.activity.enum';
 import { ChatEntity } from './chat.entity';
 import { ChatsController } from './chats.controller';
 import { ChatsService } from './chats.service';
@@ -14,6 +18,20 @@ const mockChat = {
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
 } as ChatEntity;
 
+const mockUserId = 'c3d4e5f6-a7b8-4012-bdef-123456789012';
+const mockChatId = mockChat.id;
+
+function buildMockReply(): FastifyReply {
+  return {
+    getHeaders: jest.fn().mockReturnValue({}),
+    hijack: jest.fn(),
+    raw: {
+      hasHeader: jest.fn().mockReturnValue(false),
+      setHeader: jest.fn(),
+    },
+  } as unknown as FastifyReply;
+}
+
 describe('ChatsController', () => {
   let controller: ChatsController;
   let service: jest.Mocked<ChatsService>;
@@ -26,6 +44,7 @@ describe('ChatsController', () => {
           provide: ChatsService,
           useValue: {
             create: jest.fn(),
+            sendMessage: jest.fn(),
           },
         },
       ],
@@ -39,21 +58,64 @@ describe('ChatsController', () => {
     it('should create and return a chat', async () => {
       service.create.mockResolvedValue(mockChat);
 
-      const result = await controller.create(
-        'c3d4e5f6-a7b8-4012-bdef-123456789012',
-        {
-          characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
-          placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
-        },
-      );
+      const result = await controller.create(mockUserId, {
+        characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
+        placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
+      });
 
       expect(result).toEqual(mockChat);
       expect(service.create).toHaveBeenCalledWith({
         characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
         placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
-        userId: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
+        userId: mockUserId,
         summary: null,
       });
+    });
+  });
+
+  describe('sendMessage', () => {
+    const mockStream = {
+      pipeUIMessageStreamToResponse: jest.fn(),
+    } as unknown as Awaited<ReturnType<ChatsService['sendMessage']>>;
+
+    it('should forward a plain message to the service', async () => {
+      service.sendMessage.mockResolvedValue(mockStream);
+
+      const dto = { message: 'Hello' };
+      await controller.sendMessage(
+        mockChatId,
+        mockUserId,
+        Locale.EnUs,
+        dto,
+        buildMockReply(),
+      );
+
+      expect(service.sendMessage).toHaveBeenCalledWith(
+        mockChatId,
+        mockUserId,
+        Locale.EnUs,
+        dto,
+      );
+    });
+
+    it('should forward a silence activity to the service', async () => {
+      service.sendMessage.mockResolvedValue(mockStream);
+
+      const dto = { activity: ChatActivity.Silence };
+      await controller.sendMessage(
+        mockChatId,
+        mockUserId,
+        Locale.EnUs,
+        dto,
+        buildMockReply(),
+      );
+
+      expect(service.sendMessage).toHaveBeenCalledWith(
+        mockChatId,
+        mockUserId,
+        Locale.EnUs,
+        dto,
+      );
     });
   });
 });

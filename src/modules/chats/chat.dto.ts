@@ -2,10 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
+  IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   IsUUID,
+  ValidateIf,
 } from 'class-validator';
+
+import { ChatActivity } from './chat.activity.enum';
 
 export class ChatDto {
   @ApiProperty({
@@ -60,10 +65,24 @@ export class CreateChatDto {
 
 export class SendMessageDto {
   @ApiProperty({
-    description: 'The message sent by the user',
+    description:
+      'The message sent by the user. Either message, activity, or both must be provided.',
     example: 'Hello, how are you?',
+    required: false,
   })
+  @ValidateIf((o: SendMessageDto) => !o.activity || o.message !== undefined)
   @IsString()
   @IsNotEmpty()
-  message: string;
+  message?: string;
+
+  @ApiProperty({
+    description:
+      'A user activity reported by the client (e.g. silence after some time). Either message, activity, or both must be provided.',
+    enum: ChatActivity,
+    example: ChatActivity.Silence,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(ChatActivity)
+  activity?: ChatActivity;
 }
