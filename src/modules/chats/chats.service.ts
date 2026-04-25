@@ -15,6 +15,7 @@ import { LocationFacade } from '../locations/location.facade';
 import { UserFacade } from '../users/user.facade';
 import { SendMessageDto } from './chat.dto';
 import { PromptsService } from '../../common/prompts/prompts.service';
+import { Locale } from '../../common/enums/locale.enum';
 
 @Injectable()
 export class ChatsService {
@@ -55,6 +56,7 @@ export class ChatsService {
   async sendMessage(
     chatId: string,
     userId: string,
+    locale: Locale,
     dto: SendMessageDto,
   ): Promise<ReturnType<typeof streamText>> {
     const [chat, user, history] = await Promise.all([
@@ -118,6 +120,7 @@ export class ChatsService {
         user,
         historyIsTruncated: hasMoreMessages,
         summary: chat.summary ?? undefined,
+        locale,
       }),
       messages,
       experimental_telemetry: {

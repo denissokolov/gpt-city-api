@@ -9,6 +9,57 @@ import type {
 import type { CreatePlaceEntityInput } from './place.entity';
 import { LocationsService } from './locations.service';
 
+export const listLocationsParams = z.object({});
+
+export const getLocationParams = z.object({
+  id: z.uuid().describe('UUID of the location'),
+});
+
+export const createLocationParams = z.object({
+  name: z.string().max(255).describe('Name of the location'),
+  description: z.string().describe('Description of the location'),
+  locale: z.enum(Locale).describe('Locale (e.g. en-US, pt-BR)'),
+  characterIds: z
+    .array(z.uuid())
+    .optional()
+    .describe('UUIDs of characters to assign to this location'),
+});
+
+export const updateLocationParams = z.object({
+  id: z.uuid().describe('UUID of the location to update'),
+  name: z.string().max(255).optional().describe('New name'),
+  description: z.string().optional().describe('New description'),
+  locale: z.enum(Locale).optional().describe('New locale'),
+  characterIds: z
+    .array(z.uuid())
+    .optional()
+    .describe('New set of character UUIDs for this location'),
+});
+
+export const deleteLocationParams = z.object({
+  id: z.uuid().describe('UUID of the location to delete'),
+});
+
+export const createPlaceParams = z.object({
+  name: z.string().max(255).describe('Name of the place'),
+  description: z.string().describe('Description of the place'),
+  locationId: z.uuid().describe('UUID of the parent location'),
+});
+
+export const updatePlaceParams = z.object({
+  id: z.uuid().describe('UUID of the place to update'),
+  name: z.string().max(255).optional().describe('New name'),
+  description: z.string().optional().describe('New description'),
+  locationId: z
+    .uuid()
+    .optional()
+    .describe('New parent location UUID (to move the place)'),
+});
+
+export const deletePlaceParams = z.object({
+  id: z.uuid().describe('UUID of the place to delete'),
+});
+
 @Injectable()
 export class LocationsTool {
   constructor(private readonly locationsService: LocationsService) {}
@@ -17,7 +68,7 @@ export class LocationsTool {
     name: 'list-locations',
     description:
       'List all locations in the city (without characters or places)',
-    parameters: z.object({}),
+    parameters: listLocationsParams,
     annotations: { readOnlyHint: true },
   })
   async listLocations() {
@@ -28,9 +79,7 @@ export class LocationsTool {
   @Tool({
     name: 'get-location',
     description: 'Get a single location by ID with its characters and places',
-    parameters: z.object({
-      id: z.uuid().describe('UUID of the location'),
-    }),
+    parameters: getLocationParams,
     annotations: { readOnlyHint: true },
   })
   async getLocation({ id }: { id: string }) {
@@ -41,15 +90,7 @@ export class LocationsTool {
   @Tool({
     name: 'create-location',
     description: 'Create a new location in the city',
-    parameters: z.object({
-      name: z.string().max(255).describe('Name of the location'),
-      description: z.string().describe('Description of the location'),
-      locale: z.enum(Locale).describe('Locale (e.g. en-US, pt-BR)'),
-      characterIds: z
-        .array(z.uuid())
-        .optional()
-        .describe('UUIDs of characters to assign to this location'),
-    }),
+    parameters: createLocationParams,
     annotations: { readOnlyHint: false },
   })
   async createLocation(args: CreateLocationEntityInput) {
@@ -60,16 +101,7 @@ export class LocationsTool {
   @Tool({
     name: 'update-location',
     description: 'Update an existing location by ID',
-    parameters: z.object({
-      id: z.uuid().describe('UUID of the location to update'),
-      name: z.string().max(255).optional().describe('New name'),
-      description: z.string().optional().describe('New description'),
-      locale: z.enum(Locale).optional().describe('New locale'),
-      characterIds: z
-        .array(z.uuid())
-        .optional()
-        .describe('New set of character UUIDs for this location'),
-    }),
+    parameters: updateLocationParams,
     annotations: { readOnlyHint: false },
   })
   async updateLocation(args: UpdateLocationEntityInput) {
@@ -80,9 +112,7 @@ export class LocationsTool {
   @Tool({
     name: 'delete-location',
     description: 'Delete a location by ID (also deletes its places)',
-    parameters: z.object({
-      id: z.uuid().describe('UUID of the location to delete'),
-    }),
+    parameters: deleteLocationParams,
     annotations: { readOnlyHint: false, destructiveHint: true },
   })
   async deleteLocation({ id }: { id: string }) {
@@ -93,11 +123,7 @@ export class LocationsTool {
   @Tool({
     name: 'create-place',
     description: 'Create a new place within a location',
-    parameters: z.object({
-      name: z.string().max(255).describe('Name of the place'),
-      description: z.string().describe('Description of the place'),
-      locationId: z.uuid().describe('UUID of the parent location'),
-    }),
+    parameters: createPlaceParams,
     annotations: { readOnlyHint: false },
   })
   async createPlace(args: CreatePlaceEntityInput) {
@@ -108,15 +134,7 @@ export class LocationsTool {
   @Tool({
     name: 'update-place',
     description: 'Update an existing place by ID',
-    parameters: z.object({
-      id: z.uuid().describe('UUID of the place to update'),
-      name: z.string().max(255).optional().describe('New name'),
-      description: z.string().optional().describe('New description'),
-      locationId: z
-        .uuid()
-        .optional()
-        .describe('New parent location UUID (to move the place)'),
-    }),
+    parameters: updatePlaceParams,
     annotations: { readOnlyHint: false },
   })
   async updatePlace(args: {
@@ -132,9 +150,7 @@ export class LocationsTool {
   @Tool({
     name: 'delete-place',
     description: 'Delete a place by ID',
-    parameters: z.object({
-      id: z.uuid().describe('UUID of the place to delete'),
-    }),
+    parameters: deletePlaceParams,
     annotations: { readOnlyHint: false, destructiveHint: true },
   })
   async deletePlace({ id }: { id: string }) {

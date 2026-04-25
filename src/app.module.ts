@@ -8,6 +8,7 @@ import { ChatsModule } from './modules/chats/chats.module';
 import { HealthModule } from './modules/health/health.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { LocationsTool } from './modules/locations/locations.tool';
+import { SystemChatsModule } from './modules/systemChats/systemChats.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { UsersModule } from './modules/users/users.module';
     CharactersModule,
     ChatsModule,
     LocationsModule,
+    SystemChatsModule,
     UsersModule,
     McpModule.forRoot({
       name: 'gpt-city',

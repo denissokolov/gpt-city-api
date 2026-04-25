@@ -29,4 +29,5 @@ export default z.object({
   }),
   historyIsTruncated: z.boolean(),
   summary: z.string().optional(),
+  locale: z.string(),
 });
