@@ -1,12 +1,17 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiUserIdHeader,
+  UserIdHeader,
+} from '../../common/decorators/userIdHeader.decorator';
 import { CreateUserDto, UpdateUserDto, UserDto } from './user.dto';
 import { UsersService } from './users.service';
 
@@ -21,6 +26,19 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Invalid request body' })
   create(@Body() dto: CreateUserDto): Promise<UserDto> {
     return this.usersService.create(dto);
+  }
+
+  @Get('current')
+  @ApiOperation({ summary: 'Get the current user' })
+  @ApiUserIdHeader()
+  @ApiResponse({ status: 200, type: UserDto })
+  @ApiResponse({
+    status: 400,
+    description: 'Missing or invalid x-user-id header',
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  findCurrent(@UserIdHeader() userId: string): Promise<UserDto> {
+    return this.usersService.findOne(userId);
   }
 
   @Patch(':id')

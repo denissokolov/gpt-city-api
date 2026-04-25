@@ -31,6 +31,7 @@ describe('UsersController', () => {
           provide: UsersService,
           useValue: {
             create: jest.fn(),
+            findOne: jest.fn(),
             update: jest.fn(),
           },
         },
@@ -58,6 +59,18 @@ describe('UsersController', () => {
       expect(result).toEqual(mockUser);
       expect(service.create).toHaveBeenCalledTimes(1);
       expect(service.create).toHaveBeenCalledWith(dto);
+    });
+  });
+
+  describe('findCurrent', () => {
+    it('should return the current user by header id', async () => {
+      service.findOne.mockResolvedValue(mockUser);
+
+      const result = await controller.findCurrent(mockUser.id);
+
+      expect(result).toEqual(mockUser);
+      expect(service.findOne).toHaveBeenCalledTimes(1);
+      expect(service.findOne).toHaveBeenCalledWith(mockUser.id);
     });
   });
 

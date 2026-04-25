@@ -124,6 +124,47 @@ describe('UsersController (e2e)', () => {
     });
   });
 
+  describe('GET /users/current', () => {
+    it('should return the current user and 200', async () => {
+      mockRepository.findOneBy.mockResolvedValue(mockUser);
+
+      return request(app.getHttpServer())
+        .get('/users/current')
+        .set('x-user-id', mockUser.id)
+        .expect(200)
+        .expect((res) => {
+          const body = res.body as UserDto;
+          expect(body.id).toBe(mockUser.id);
+          expect(body.firstName).toBe(mockUser.firstName);
+          expect(body.lastName).toBe(mockUser.lastName);
+          expect(body.age).toBe(mockUser.age);
+          expect(body.sex).toBe(mockUser.sex);
+          expect(body.title).toBe(mockUser.title);
+          expect(body.backstory).toBe(mockUser.backstory);
+        });
+    });
+
+    it('should return 404 when user does not exist', () => {
+      mockRepository.findOneBy.mockResolvedValue(null);
+
+      return request(app.getHttpServer())
+        .get('/users/current')
+        .set('x-user-id', mockUser.id)
+        .expect(404);
+    });
+
+    it('should return 400 when x-user-id header is missing', () => {
+      return request(app.getHttpServer()).get('/users/current').expect(400);
+    });
+
+    it('should return 400 when x-user-id header is not a UUID', () => {
+      return request(app.getHttpServer())
+        .get('/users/current')
+        .set('x-user-id', 'not-a-uuid')
+        .expect(400);
+    });
+  });
+
   describe('PATCH /users/:id', () => {
     const updateBody = {
       title: 'Senior Mathematician',
