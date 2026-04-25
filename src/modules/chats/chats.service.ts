@@ -77,6 +77,7 @@ export class ChatsService {
       this.chatRepository.find({
         where: { userId, summary: Not(IsNull()), id: Not(chatId) },
         order: { createdAt: 'DESC' },
+        relations: ['place'],
         take: 10,
       }),
     ]);
@@ -132,6 +133,7 @@ export class ChatsService {
         locale,
         previousChats: previousChats.map((c) => ({
           summary: c.summary ?? undefined,
+          placeName: c.place.name,
           updatedAt: c.updatedAt,
         })),
       }),

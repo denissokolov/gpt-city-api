@@ -33,6 +33,7 @@ export default z.object({
   previousChats: z.array(
     z.object({
       summary: z.string().optional(),
+      placeName: z.string(),
       updatedAt: z.date(),
     }),
   ),

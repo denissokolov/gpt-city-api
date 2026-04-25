@@ -35,6 +35,7 @@
     "@nestjs/platform-fastify": "^11.1.18",
     "@nestjs/swagger": "^11.2.7",
     "@nestjs/typeorm": "^11.0.1",
+    "@pydantic/logfire-node": "^0.13.2",
     "@rekog/mcp-nest": "^1.9.9",
     "@scalar/nestjs-api-reference": "^1.1.7",
     "ai": "^6.0.168",

@@ -1,3 +1,5 @@
+import './instrumentation';
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import {
@@ -71,6 +73,18 @@ async function bootstrap() {
   app.getHttpAdapter().get('/openapi.json', (_req, res) => {
     res.send(document);
   });
+
+  // OpenTelemetry (loaded via @pydantic/logfire-node) keeps the event loop
+  // alive and intercepts SIGTERM, which prevents `nest start --watch` from
+  // restarting the process on file changes. Force-exit on shutdown signals.
+  const shutdown = (signal: NodeJS.Signals) => {
+    void app
+      .close()
+      .catch((err) => console.error(`Error during shutdown (${signal})`, err))
+      .finally(() => process.exit(0));
+  };
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
 
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
