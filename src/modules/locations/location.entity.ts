@@ -2,8 +2,6 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinTable,
-  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -26,15 +24,7 @@ export class LocationEntity {
   @Column({ type: 'enum', enum: Locale })
   locale: Locale;
 
-  @ManyToMany(() => CharacterEntity)
-  @JoinTable({
-    name: 'location_characters',
-    joinColumn: { name: 'locationEntityId', referencedColumnName: 'id' },
-    inverseJoinColumn: {
-      name: 'characterEntityId',
-      referencedColumnName: 'id',
-    },
-  })
+  @OneToMany(() => CharacterEntity, (character) => character.location)
   characters: CharacterEntity[];
 
   @OneToMany(() => PlaceEntity, (place) => place.location)
@@ -50,7 +40,7 @@ export class LocationEntity {
 export type CreateLocationEntityInput = Omit<
   LocationEntity,
   'id' | 'characters' | 'places' | 'createdAt' | 'updatedAt'
-> & { characterIds?: string[] };
+>;
 export type UpdateLocationEntityInput = Partial<
   Omit<LocationEntity, 'characters' | 'places' | 'createdAt' | 'updatedAt'>
-> & { id: string; characterIds?: string[] };
+> & { id: string };

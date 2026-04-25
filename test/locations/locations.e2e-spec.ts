@@ -5,7 +5,6 @@ import {
 } from '@nestjs/platform-fastify';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
-import { CharacterEntity } from '../../src/modules/characters/character.entity';
 import { Provider, Sex } from '../../src/modules/characters/character.enum';
 import {
   LocationStateDto,
@@ -35,6 +34,8 @@ const mockLocation: LocationEntity = {
       backstory: 'Grew up fascinated by the stars.',
       model: 'gpt-4o',
       provider: Provider.OpenAI,
+      locationId: 'd4e5f6a7-b8c9-0123-defa-234567890123',
+      location: undefined as never,
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     },
@@ -79,10 +80,6 @@ const mockPlaceRepository = {
   remove: jest.fn(),
 };
 
-const mockCharacterRepository = {
-  findBy: jest.fn(),
-};
-
 const mockPlaceDistributorService = {
   distributeCharacters: jest.fn(),
 };
@@ -104,10 +101,6 @@ describe('LocationsController (e2e)', () => {
         {
           provide: getRepositoryToken(PlaceEntity),
           useValue: mockPlaceRepository,
-        },
-        {
-          provide: getRepositoryToken(CharacterEntity),
-          useValue: mockCharacterRepository,
         },
         {
           provide: PlaceDistributorService,

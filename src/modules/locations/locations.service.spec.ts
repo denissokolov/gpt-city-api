@@ -22,6 +22,8 @@ const albert: CharacterEntity = {
   backstory: 'Grew up fascinated by the stars.',
   model: 'gpt-4o',
   provider: Provider.OpenAI,
+  locationId: 'd4e5f6a7-b8c9-0123-defa-234567890123',
+  location: undefined as never,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
 };
@@ -87,12 +89,6 @@ describe('LocationsService', () => {
             create: jest.fn(),
             save: jest.fn(),
             remove: jest.fn(),
-          },
-        },
-        {
-          provide: getRepositoryToken(CharacterEntity),
-          useValue: {
-            findBy: jest.fn(),
           },
         },
         {

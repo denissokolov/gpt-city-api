@@ -19,10 +19,6 @@ export const createLocationParams = z.object({
   name: z.string().max(255).describe('Name of the location'),
   description: z.string().describe('Description of the location'),
   locale: z.enum(Locale).describe('Locale (e.g. en-US, pt-BR)'),
-  characterIds: z
-    .array(z.uuid())
-    .optional()
-    .describe('UUIDs of characters to assign to this location'),
 });
 
 export const updateLocationParams = z.object({
@@ -30,10 +26,6 @@ export const updateLocationParams = z.object({
   name: z.string().max(255).optional().describe('New name'),
   description: z.string().optional().describe('New description'),
   locale: z.enum(Locale).optional().describe('New locale'),
-  characterIds: z
-    .array(z.uuid())
-    .optional()
-    .describe('New set of character UUIDs for this location'),
 });
 
 export const deleteLocationParams = z.object({

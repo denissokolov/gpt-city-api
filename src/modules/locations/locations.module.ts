@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PromptsModule } from '../../common/prompts/prompts.module';
-import { CharacterEntity } from '../characters/character.entity';
 import { LocationEntity } from './location.entity';
 import { LocationFacade } from './location.facade';
 import { LocationsController } from './locations.controller';
@@ -11,7 +10,7 @@ import { PlaceDistributorService } from './placeDistributor.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([LocationEntity, PlaceEntity, CharacterEntity]),
+    TypeOrmModule.forFeature([LocationEntity, PlaceEntity]),
     PromptsModule,
   ],
   controllers: [LocationsController],

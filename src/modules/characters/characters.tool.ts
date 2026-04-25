@@ -32,6 +32,7 @@ export const createCharacterParams = z.object({
     .max(255)
     .describe('AI model used to power the character (e.g. "gpt-4o")'),
   provider: z.enum(Provider).describe('AI provider that hosts the model'),
+  locationId: z.uuid().describe('UUID of the location this character lives in'),
 });
 
 export const updateCharacterParams = z.object({
@@ -45,6 +46,10 @@ export const updateCharacterParams = z.object({
   backstory: z.string().optional().describe('New backstory'),
   model: z.string().max(255).optional().describe('New AI model'),
   provider: z.enum(Provider).optional().describe('New AI provider'),
+  locationId: z
+    .uuid()
+    .optional()
+    .describe('New location UUID (to move the character)'),
 });
 
 export const deleteCharacterParams = z.object({

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CharacterDto, toCharacterDto } from '../characters/character.dto';
 import { CharacterEntity } from '../characters/character.entity';
 import { LocationStateDto, PlaceStateDto } from './location.dto';
@@ -23,8 +23,6 @@ export class LocationsService {
     private readonly locationRepository: Repository<LocationEntity>,
     @InjectRepository(PlaceEntity)
     private readonly placeRepository: Repository<PlaceEntity>,
-    @InjectRepository(CharacterEntity)
-    private readonly characterRepository: Repository<CharacterEntity>,
     private readonly placeDistributorService: PlaceDistributorService,
   ) {}
 
@@ -86,17 +84,7 @@ export class LocationsService {
   }
 
   async create(dto: CreateLocationEntityInput): Promise<LocationEntity> {
-    const characters = dto.characterIds?.length
-      ? await this.characterRepository.findBy({
-          id: In(dto.characterIds),
-        })
-      : [];
-    const location = this.locationRepository.create({
-      name: dto.name,
-      description: dto.description,
-      locale: dto.locale,
-      characters,
-    });
+    const location = this.locationRepository.create(dto);
     return this.locationRepository.save(location);
   }
 
@@ -105,13 +93,6 @@ export class LocationsService {
     if (dto.name !== undefined) location.name = dto.name;
     if (dto.description !== undefined) location.description = dto.description;
     if (dto.locale !== undefined) location.locale = dto.locale;
-    if (dto.characterIds !== undefined) {
-      location.characters = dto.characterIds.length
-        ? await this.characterRepository.findBy({
-            id: In(dto.characterIds),
-          })
-        : [];
-    }
     return this.locationRepository.save(location);
   }
 

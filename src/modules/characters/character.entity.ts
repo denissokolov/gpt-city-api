@@ -2,10 +2,13 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Provider, Sex } from './character.enum';
+import { LocationEntity } from '../locations/location.entity';
 
 @Entity('characters')
 export class CharacterEntity {
@@ -39,6 +42,15 @@ export class CharacterEntity {
   @Column({ type: 'enum', enum: Provider })
   provider: Provider;
 
+  @Column('uuid')
+  locationId: string;
+
+  @ManyToOne(() => LocationEntity, (location) => location.characters, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'locationId' })
+  location: LocationEntity;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
@@ -48,8 +60,8 @@ export class CharacterEntity {
 
 export type CreateCharacterEntityInput = Omit<
   CharacterEntity,
-  'id' | 'createdAt' | 'updatedAt'
+  'id' | 'location' | 'createdAt' | 'updatedAt'
 >;
 export type UpdateCharacterEntityInput = Partial<
-  Omit<CharacterEntity, 'createdAt' | 'updatedAt'>
+  Omit<CharacterEntity, 'location' | 'createdAt' | 'updatedAt'>
 > & { id: string };
