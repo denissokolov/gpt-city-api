@@ -3,11 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatEntity } from './chat.entity';
 import { ChatsController } from './chats.controller';
 import { ChatsService } from './chats.service';
-import { ChatPromptHelper } from './chatPrompt.helper';
 import { MessageEntity } from './message.entity';
 import { CharactersModule } from '../characters/characters.module';
 import { LocationsModule } from '../locations/locations.module';
 import { UsersModule } from '../users/users.module';
+import { PromptsModule } from 'src/common/prompts/prompts.module';
 
 @Module({
   imports: [
@@ -15,9 +15,10 @@ import { UsersModule } from '../users/users.module';
     CharactersModule,
     LocationsModule,
     UsersModule,
+    PromptsModule,
   ],
   controllers: [ChatsController],
-  providers: [ChatsService, ChatPromptHelper],
+  providers: [ChatsService],
   exports: [],
 })
 export class ChatsModule {}

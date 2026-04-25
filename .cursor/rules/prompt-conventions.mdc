@@ -1,0 +1,62 @@
+---
+description: Prompt conventions — all LLM prompts live in the prompts module
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# Prompt Conventions
+
+## All prompts live in the prompts module
+
+Every LLM prompt must live under `src/common/prompts/<group>/` as a Handlebars template paired with a Zod schema, and be registered in `prompts.registry.ts`. Never inline prompt strings inside services, controllers, or tools.
+
+```
+src/common/prompts/
+  <group>/
+    system.hbs         # template
+    system.schema.ts   # Zod schema (default export)
+  prompts.registry.ts  # add the new key here
+```
+
+## Render via PromptsService
+
+Services must inject `PromptsService` and call `render(key, input)`. Never call `streamText`/`generateText` (or similar) with a string literal in `system` or `prompt`.
+
+```typescript
+// ❌ BAD — prompt inlined in the service
+return streamText({
+  model: `${character.provider}/${character.model}`,
+  system: `You are ${character.firstName}. You are at ${place.name}...`,
+  messages,
+});
+
+// ❌ BAD — prompt template kept in a local constant or sibling file
+const SYSTEM_PROMPT = `You are {{character.firstName}}...`;
+
+// ✅ GOOD — template + schema in src/common/prompts, rendered via the service
+return streamText({
+  model: `${character.provider}/${character.model}`,
+  system: this.promptsService.render('chat/system', {
+    character,
+    place,
+    user,
+  }),
+  messages,
+});
+```
+
+## Adding a new prompt — checklist
+
+1. Create `src/common/prompts/<group>/<name>.hbs` with the Handlebars template.
+2. Create `src/common/prompts/<group>/<name>.schema.ts` exporting a `z.object({...})` as the default export.
+3. Register it in `src/common/prompts/prompts.registry.ts`:
+
+```typescript
+export const promptRegistry = {
+  'place/system': placeSystemPromptSchema,
+  'chat/system': chatSystemPromptSchema,
+  'mynew/system': myNewSystemPromptSchema,
+} as const satisfies Record<string, z.ZodObject>;
+```
+
+4. Import `PromptsModule` in the consumer module and inject `PromptsService` to render it.

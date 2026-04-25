@@ -1,6 +1,7 @@
 import { LocationEntity } from './location.entity';
 import { Locale } from '../../common/enums/locale.enum';
 import { PlaceDistributorService } from './placeDistributor.service';
+import { PromptsService } from '../../common/prompts/prompts.service';
 import { Provider, Sex } from '../characters/character.enum';
 
 const mockGenerateText = jest.fn();
@@ -56,10 +57,13 @@ const mockLocation: LocationEntity = {
 
 describe('PlaceDistributorService', () => {
   let service: PlaceDistributorService;
+  let promptsService: PromptsService;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
-    service = new PlaceDistributorService();
+    promptsService = new PromptsService();
+    await promptsService.onApplicationBootstrap();
+    service = new PlaceDistributorService(promptsService);
   });
 
   describe('distributeCharacters', () => {
@@ -96,7 +100,7 @@ describe('PlaceDistributorService', () => {
         output: unknown;
       };
 
-      expect(callArgs.model).toBe('anthropic/claude-opus-4.6');
+      expect(callArgs.model).toBe('anthropic/claude-opus-4.7');
       expect(callArgs.maxRetries).toBe(3);
       expect(callArgs.system).toContain('place distributor');
       expect(callArgs.prompt).toContain(mockLocation.name);
@@ -106,59 +110,40 @@ describe('PlaceDistributorService', () => {
       expect(mockOutputObject).toHaveBeenCalledTimes(1);
     });
 
+    it('should render an empty places block when there are none', async () => {
+      mockGenerateText.mockResolvedValue({ output: [] });
+
+      await service.distributeCharacters(
+        { ...mockLocation, places: [] },
+        '2026-04-19T10:00:00.000Z',
+      );
+
+      const firstCall = mockGenerateText.mock.calls[0] as unknown[];
+      const callArgs = firstCall[0] as { prompt: string };
+      expect(callArgs.prompt).not.toContain('<place>');
+      expect(callArgs.prompt).toContain('<places>');
+    });
+
+    it('should render an empty characters block when there are none', async () => {
+      mockGenerateText.mockResolvedValue({ output: [] });
+
+      await service.distributeCharacters(
+        { ...mockLocation, characters: [] },
+        '2026-04-19T10:00:00.000Z',
+      );
+
+      const firstCall = mockGenerateText.mock.calls[0] as unknown[];
+      const callArgs = firstCall[0] as { prompt: string };
+      expect(callArgs.prompt).not.toContain('<character>');
+      expect(callArgs.prompt).toContain('<characters>');
+    });
+
     it('should propagate errors from generateText', async () => {
       mockGenerateText.mockRejectedValue(new Error('upstream failure'));
 
       await expect(
         service.distributeCharacters(mockLocation, '2026-04-19T10:00:00.000Z'),
       ).rejects.toThrow('upstream failure');
-    });
-  });
-
-  describe('generateUserPrompt', () => {
-    it('should include all places and characters', () => {
-      const prompt = service.generateUserPrompt(
-        mockLocation,
-        '2026-04-19T10:00:00.000Z',
-      );
-
-      expect(prompt).toContain(`<id>${mockLocation.places[0].id}</id>`);
-      expect(prompt).toContain(`<name>${mockLocation.places[0].name}</name>`);
-      expect(prompt).toContain(`<id>${mockLocation.characters[0].id}</id>`);
-      expect(prompt).toContain(
-        `<firstName>${mockLocation.characters[0].firstName}</firstName>`,
-      );
-      expect(prompt).toContain(
-        `<personality>${mockLocation.characters[0].personality}</personality>`,
-      );
-    });
-
-    it('should render an empty places block when there are none', () => {
-      const prompt = service.generateUserPrompt(
-        { ...mockLocation, places: [] },
-        '2026-04-19T10:00:00.000Z',
-      );
-
-      expect(prompt).not.toContain('<place>');
-      expect(prompt).toContain('<places>');
-    });
-
-    it('should render an empty characters block when there are none', () => {
-      const prompt = service.generateUserPrompt(
-        { ...mockLocation, characters: [] },
-        '2026-04-19T10:00:00.000Z',
-      );
-
-      expect(prompt).not.toContain('<character>');
-      expect(prompt).toContain('<characters>');
-    });
-  });
-
-  describe('getSystemPrompt', () => {
-    it('should describe the distributor role', () => {
-      const prompt = service.getSystemPrompt();
-
-      expect(prompt).toContain('place distributor');
     });
   });
 });

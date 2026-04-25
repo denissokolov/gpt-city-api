@@ -9,12 +9,12 @@ import request from 'supertest';
 import { CharacterFacade } from '../../src/modules/characters/character.facade';
 import { ChatDto } from '../../src/modules/chats/chat.dto';
 import { ChatEntity } from '../../src/modules/chats/chat.entity';
-import { ChatPromptHelper } from '../../src/modules/chats/chatPrompt.helper';
 import { ChatsController } from '../../src/modules/chats/chats.controller';
 import { ChatsService } from '../../src/modules/chats/chats.service';
 import { MessageEntity } from '../../src/modules/chats/message.entity';
 import { LocationFacade } from '../../src/modules/locations/location.facade';
 import { UserFacade } from '../../src/modules/users/user.facade';
+import { PromptsService } from '../../src/common/prompts/prompts.service';
 
 const mockChat = {
   id: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
@@ -54,8 +54,8 @@ const mockUserFacade = {
   findOne: jest.fn(),
 };
 
-const mockChatPromptHelper = {
-  buildSystemPrompt: jest.fn(),
+const mockPromptsService = {
+  render: jest.fn(),
 };
 
 describe('ChatsController (e2e)', () => {
@@ -89,8 +89,8 @@ describe('ChatsController (e2e)', () => {
           useValue: mockUserFacade,
         },
         {
-          provide: ChatPromptHelper,
-          useValue: mockChatPromptHelper,
+          provide: PromptsService,
+          useValue: mockPromptsService,
         },
       ],
     }).compile();

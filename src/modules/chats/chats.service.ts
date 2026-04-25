@@ -14,7 +14,7 @@ import { CharacterFacade } from '../characters/character.facade';
 import { LocationFacade } from '../locations/location.facade';
 import { UserFacade } from '../users/user.facade';
 import { SendMessageDto } from './chat.dto';
-import { ChatPromptHelper } from './chatPrompt.helper';
+import { PromptsService } from '../../common/prompts/prompts.service';
 
 @Injectable()
 export class ChatsService {
@@ -28,7 +28,7 @@ export class ChatsService {
     private readonly characterFacade: CharacterFacade,
     private readonly locationFacade: LocationFacade,
     private readonly userFacade: UserFacade,
-    private readonly chatPromptHelper: ChatPromptHelper,
+    private readonly promptsService: PromptsService,
   ) {}
 
   async create(dto: CreateChatEntityInput): Promise<ChatEntity> {
@@ -109,16 +109,16 @@ export class ChatsService {
 
     const hasMoreMessages = history.length > this.MAX_MESSAGE_HISTORY_LENGTH;
 
-    const systemPrompt = this.chatPromptHelper.buildSystemPrompt(
-      character,
-      user,
-      chat,
-      hasMoreMessages,
-    );
-
     return streamText({
       model: `${character.provider}/${character.model}`,
-      system: systemPrompt,
+      system: this.promptsService.render('chat/system', {
+        character,
+        place: chat.place,
+        location: chat.place.location,
+        user,
+        historyIsTruncated: hasMoreMessages,
+        summary: chat.summary ?? undefined,
+      }),
       messages,
       experimental_telemetry: {
         isEnabled: true,

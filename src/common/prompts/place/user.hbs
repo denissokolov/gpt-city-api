@@ -1,0 +1,33 @@
+<location>
+  <name>{{location.name}}</name>
+  <description>{{location.description}}</description>
+</location>
+
+<current-time>
+  {{userTime}}
+</current-time>
+
+<places>
+{{#each location.places}}
+  <place>
+    <id>{{this.id}}</id>
+    <name>{{this.name}}</name>
+    <description>{{this.description}}</description>
+  </place>
+{{/each}}
+</places>
+
+<characters>
+{{#each location.characters}}
+  <character>
+    <id>{{this.id}}</id>
+    <firstName>{{this.firstName}}</firstName>
+    <lastName>{{this.lastName}}</lastName>
+    <title>{{this.title}}</title>
+    <age>{{this.age}}</age>
+    <sex>{{this.sex}}</sex>
+    <personality>{{this.personality}}</personality>
+    <backstory>{{this.backstory}}</backstory>
+  </character>
+{{/each}}
+</characters>
