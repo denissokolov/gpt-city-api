@@ -50,6 +50,10 @@ export class CharacterFacade {
     return this.characterMemoriesService.findOne(characterId, userId);
   }
 
+  removeMemoriesByUserId(userId: string): Promise<number> {
+    return this.characterMemoriesService.removeAllByUserId(userId);
+  }
+
   updateMemory(
     character: CharacterEntity,
     user: UserEntity,

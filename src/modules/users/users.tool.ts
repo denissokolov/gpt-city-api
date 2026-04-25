@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Tool } from '@rekog/mcp-nest';
 import { z } from 'zod';
+import { CharacterFacade } from '../characters/character.facade';
+import { ChatFacade } from '../chats/chat.facade';
 import { Sex } from './user.enum';
 import type { UpdateUserEntityInput } from './user.entity';
 import { UsersService } from './users.service';
@@ -22,9 +24,17 @@ export const updateUserParams = z.object({
     .describe('New backstory — where they came from and what shaped them'),
 });
 
+export const clearUserHistoryParams = z.object({
+  id: z.uuid().describe('UUID of the user whose history should be cleared'),
+});
+
 @Injectable()
 export class UsersTool {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly characterFacade: CharacterFacade,
+    private readonly chatFacade: ChatFacade,
+  ) {}
 
   @Tool({
     name: 'update-user',
@@ -35,5 +45,25 @@ export class UsersTool {
   async updateUser(args: UpdateUserEntityInput) {
     const user = await this.usersService.update(args);
     return JSON.stringify(user, null, 2);
+  }
+
+  @Tool({
+    name: 'clear-user-history',
+    description:
+      "Wipe a user's chat history with characters: deletes all character memories about the user, all chats they own, and all messages in those chats. Does not touch system chats, system messages, or the user profile itself.",
+    parameters: clearUserHistoryParams,
+    annotations: { readOnlyHint: false, destructiveHint: true },
+  })
+  async clearUserHistory({ id }: { id: string }) {
+    const user = await this.usersService.findOne(id);
+    const [{ chats, messages }, memories] = await Promise.all([
+      this.chatFacade.removeAllByUserId(user.id),
+      this.characterFacade.removeMemoriesByUserId(user.id),
+    ]);
+    return JSON.stringify(
+      { userId: user.id, deleted: { memories, chats, messages } },
+      null,
+      2,
+    );
   }
 }

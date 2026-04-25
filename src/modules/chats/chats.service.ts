@@ -36,6 +36,17 @@ export class ChatsService {
     private readonly promptsService: PromptsService,
   ) {}
 
+  async removeAllByUserId(
+    userId: string,
+  ): Promise<{ chats: number; messages: number }> {
+    const messages = await this.messageRepository.countBy({ userId });
+    const chatsResult = await this.chatRepository.delete({ userId });
+    return {
+      messages,
+      chats: chatsResult.affected ?? 0,
+    };
+  }
+
   async create(dto: CreateChatEntityInput): Promise<ChatEntity> {
     const place = await this.locationFacade.findPlace(dto.placeId);
     if (!place) {

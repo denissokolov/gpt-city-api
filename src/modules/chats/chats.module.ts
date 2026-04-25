@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatEntity } from './chat.entity';
+import { ChatFacade } from './chat.facade';
 import { ChatsController } from './chats.controller';
 import { ChatsService } from './chats.service';
 import { MessageEntity } from './message.entity';
@@ -18,7 +19,7 @@ import { PromptsModule } from 'src/common/prompts/prompts.module';
     PromptsModule,
   ],
   controllers: [ChatsController],
-  providers: [ChatsService],
-  exports: [],
+  providers: [ChatsService, ChatFacade],
+  exports: [ChatFacade],
 })
 export class ChatsModule {}

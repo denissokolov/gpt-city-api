@@ -43,6 +43,11 @@ export class CharacterMemoriesService {
     return this.characterMemoryRepository.findOneBy({ characterId, userId });
   }
 
+  async removeAllByUserId(userId: string): Promise<number> {
+    const result = await this.characterMemoryRepository.delete({ userId });
+    return result.affected ?? 0;
+  }
+
   async upsert(
     input: UpsertCharacterMemoryInput,
   ): Promise<CharacterMemoryEntity> {
