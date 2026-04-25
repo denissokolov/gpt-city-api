@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { LocationStateEntity } from '../locations/locationState.entity';
 import { PlaceEntity } from '../locations/place.entity';
 import { UserEntity } from '../users/user.entity';
 
@@ -31,6 +32,13 @@ export class ChatEntity {
   @Column('uuid', { array: true })
   characterIds: string[];
 
+  @ManyToOne(() => LocationStateEntity, { onDelete: 'CASCADE' })
+  state: LocationStateEntity;
+
+  @Index()
+  @Column('uuid')
+  stateId: string;
+
   @Column('text', { nullable: true })
   summary: string | null;
 
@@ -43,8 +51,8 @@ export class ChatEntity {
 
 export type CreateChatEntityInput = Omit<
   ChatEntity,
-  'id' | 'place' | 'user' | 'createdAt' | 'updatedAt'
+  'id' | 'place' | 'user' | 'state' | 'createdAt' | 'updatedAt'
 >;
 export type UpdateChatEntityInput = Partial<
-  Omit<ChatEntity, 'place' | 'user' | 'createdAt' | 'updatedAt'>
+  Omit<ChatEntity, 'place' | 'user' | 'state' | 'createdAt' | 'updatedAt'>
 > & { id: string };

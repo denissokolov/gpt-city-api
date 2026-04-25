@@ -6,7 +6,9 @@ import { Repository } from 'typeorm';
 import { CharacterEntity } from '../characters/character.entity';
 import { Provider, Sex } from '../characters/character.enum';
 import { Locale } from '../../common/enums/locale.enum';
+import { CharacterStateEntity } from './characterState.entity';
 import { LocationEntity } from './location.entity';
+import { LocationStateEntity } from './locationState.entity';
 import { LocationsService } from './locations.service';
 import { PlaceEntity } from './place.entity';
 import { PlaceDistributorService } from './placeDistributor.service';
@@ -67,6 +69,8 @@ const mockLocation: LocationEntity = {
 describe('LocationsService', () => {
   let service: LocationsService;
   let locationRepository: jest.Mocked<Repository<LocationEntity>>;
+  let locationStateRepository: jest.Mocked<Repository<LocationStateEntity>>;
+  let characterStateRepository: jest.Mocked<Repository<CharacterStateEntity>>;
   let placeDistributor: jest.Mocked<PlaceDistributorService>;
 
   beforeEach(async () => {
@@ -93,6 +97,31 @@ describe('LocationsService', () => {
           },
         },
         {
+          provide: getRepositoryToken(LocationStateEntity),
+          useValue: {
+            create: jest.fn((entity: Partial<LocationStateEntity>) => entity),
+            save: jest.fn(
+              (entity: Partial<LocationStateEntity>) =>
+                ({
+                  ...entity,
+                  id: entity.id ?? 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+                }) as LocationStateEntity,
+            ),
+            findOneBy: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(CharacterStateEntity),
+          useValue: {
+            create: jest.fn((entity: Partial<CharacterStateEntity>) => entity),
+            save: jest.fn(
+              (rows: Array<Partial<CharacterStateEntity>>) =>
+                rows as CharacterStateEntity[],
+            ),
+            findOneBy: jest.fn(),
+          },
+        },
+        {
           provide: PlaceDistributorService,
           useValue: {
             distributeCharacters: jest.fn(),
@@ -103,17 +132,41 @@ describe('LocationsService', () => {
 
     service = module.get<LocationsService>(LocationsService);
     locationRepository = module.get(getRepositoryToken(LocationEntity));
+    locationStateRepository = module.get(
+      getRepositoryToken(LocationStateEntity),
+    );
+    characterStateRepository = module.get(
+      getRepositoryToken(CharacterStateEntity),
+    );
     placeDistributor = module.get(PlaceDistributorService);
   });
 
   describe('getState', () => {
     const userTime = '2026-04-19T10:00:00.000Z';
+    const stateId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+    beforeEach(() => {
+      (locationStateRepository.save as jest.Mock).mockImplementation(
+        (entity: Partial<LocationStateEntity>) =>
+          ({ ...entity, id: stateId }) as LocationStateEntity,
+      );
+    });
 
     it('should map characters onto places using the distributor output', async () => {
       locationRepository.findOne.mockResolvedValue(mockLocation);
       placeDistributor.distributeCharacters.mockResolvedValue([
-        { placeId: library.id, charactersIds: [albert.id] },
-        { placeId: observatory.id, charactersIds: [marie.id] },
+        {
+          placeId: library.id,
+          characters: [
+            { characterId: albert.id, mood: 'curious', activity: 'reading' },
+          ],
+        },
+        {
+          placeId: observatory.id,
+          characters: [
+            { characterId: marie.id, mood: 'focused', activity: 'observing' },
+          ],
+        },
       ]);
 
       const result = await service.getState(mockLocation.id, userTime);
@@ -123,6 +176,7 @@ describe('LocationsService', () => {
         userTime,
       );
       expect(result.id).toBe(mockLocation.id);
+      expect(result.stateId).toBe(stateId);
       expect(result.places).toHaveLength(2);
       expect(result.places[0]).toMatchObject({
         id: library.id,
@@ -134,10 +188,70 @@ describe('LocationsService', () => {
       expect(result.places[1].characters[0].id).toBe(marie.id);
     });
 
+    it('should persist a location state and one character state row per character', async () => {
+      locationRepository.findOne.mockResolvedValue(mockLocation);
+      placeDistributor.distributeCharacters.mockResolvedValue([
+        {
+          placeId: library.id,
+          characters: [
+            { characterId: albert.id, mood: 'curious', activity: 'reading' },
+          ],
+        },
+        {
+          placeId: observatory.id,
+          characters: [
+            {
+              characterId: marie.id,
+              mood: 'focused',
+              activity: 'observing the sky',
+            },
+          ],
+        },
+      ]);
+
+      await service.getState(mockLocation.id, userTime);
+
+      expect(locationStateRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          locationId: mockLocation.id,
+          userTime: new Date(userTime),
+        }),
+      );
+
+      const savedRowsCalls = (characterStateRepository.save as jest.Mock).mock
+        .calls as Array<[Array<Partial<CharacterStateEntity>>]>;
+      expect(savedRowsCalls).toHaveLength(1);
+      const savedRows = savedRowsCalls[0][0];
+      expect(savedRows).toHaveLength(2);
+      expect(savedRows).toContainEqual(
+        expect.objectContaining({
+          stateId,
+          characterId: albert.id,
+          placeId: library.id,
+          mood: 'curious',
+          activity: 'reading',
+        }),
+      );
+      expect(savedRows).toContainEqual(
+        expect.objectContaining({
+          stateId,
+          characterId: marie.id,
+          placeId: observatory.id,
+          mood: 'focused',
+          activity: 'observing the sky',
+        }),
+      );
+    });
+
     it('should convert character entities to DTOs without timestamps', async () => {
       locationRepository.findOne.mockResolvedValue(mockLocation);
       placeDistributor.distributeCharacters.mockResolvedValue([
-        { placeId: library.id, charactersIds: [albert.id] },
+        {
+          placeId: library.id,
+          characters: [
+            { characterId: albert.id, mood: 'curious', activity: 'reading' },
+          ],
+        },
       ]);
 
       const result = await service.getState(mockLocation.id, userTime);
@@ -153,7 +267,17 @@ describe('LocationsService', () => {
     it('should place empty character lists in places not mentioned by the distributor', async () => {
       locationRepository.findOne.mockResolvedValue(mockLocation);
       placeDistributor.distributeCharacters.mockResolvedValue([
-        { placeId: library.id, charactersIds: [albert.id, marie.id] },
+        {
+          placeId: library.id,
+          characters: [
+            { characterId: albert.id, mood: 'curious', activity: 'reading' },
+            {
+              characterId: marie.id,
+              mood: 'focused',
+              activity: 'taking notes',
+            },
+          ],
+        },
       ]);
 
       const result = await service.getState(mockLocation.id, userTime);
@@ -171,7 +295,14 @@ describe('LocationsService', () => {
       placeDistributor.distributeCharacters.mockResolvedValue([
         {
           placeId: library.id,
-          charactersIds: [albert.id, 'ffffffff-ffff-ffff-ffff-ffffffffffff'],
+          characters: [
+            { characterId: albert.id, mood: 'curious', activity: 'reading' },
+            {
+              characterId: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+              mood: 'unknown',
+              activity: 'unknown',
+            },
+          ],
         },
       ]);
 
@@ -192,6 +323,7 @@ describe('LocationsService', () => {
       const result = await service.getState(mockLocation.id, userTime);
 
       expect(result.places).toEqual([]);
+      expect(characterStateRepository.save).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when the location does not exist', async () => {
@@ -201,6 +333,41 @@ describe('LocationsService', () => {
         NotFoundException,
       );
       expect(placeDistributor.distributeCharacters).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findState', () => {
+    it('should delegate to the location state repository', async () => {
+      const stateId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+      const fakeState = { id: stateId } as LocationStateEntity;
+      (locationStateRepository.findOneBy as jest.Mock).mockResolvedValue(
+        fakeState,
+      );
+
+      const result = await service.findState(stateId);
+
+      expect(result).toBe(fakeState);
+      expect(locationStateRepository.findOneBy).toHaveBeenCalledWith({
+        id: stateId,
+      });
+    });
+  });
+
+  describe('findCharacterState', () => {
+    it('should look up character state by stateId + characterId', async () => {
+      const stateId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+      const fakeRow = { id: 'row-1' } as unknown as CharacterStateEntity;
+      (characterStateRepository.findOneBy as jest.Mock).mockResolvedValue(
+        fakeRow,
+      );
+
+      const result = await service.findCharacterState(stateId, albert.id);
+
+      expect(result).toBe(fakeRow);
+      expect(characterStateRepository.findOneBy).toHaveBeenCalledWith({
+        stateId,
+        characterId: albert.id,
+      });
     });
   });
 });

@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { CharacterStateEntity } from './characterState.entity';
 import {
   CreateLocationEntityInput,
   LocationEntity,
   UpdateLocationEntityInput,
 } from './location.entity';
+import { LocationStateEntity } from './locationState.entity';
 import { LocationsService } from './locations.service';
 import {
   CreatePlaceEntityInput,
@@ -49,5 +51,16 @@ export class LocationFacade {
 
   removePlace(id: string): Promise<void> {
     return this.locationsService.removePlace(id);
+  }
+
+  findState(stateId: string): Promise<LocationStateEntity | null> {
+    return this.locationsService.findState(stateId);
+  }
+
+  findCharacterState(
+    stateId: string,
+    characterId: string,
+  ): Promise<CharacterStateEntity | null> {
+    return this.locationsService.findCharacterState(stateId, characterId);
   }
 }

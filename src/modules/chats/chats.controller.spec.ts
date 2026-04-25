@@ -61,12 +61,14 @@ describe('ChatsController', () => {
       const result = await controller.create(mockUserId, {
         characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
         placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
+        stateId: 'd4e5f6a7-b8c9-0123-defa-234567890123',
       });
 
       expect(result).toEqual(mockChat);
       expect(service.create).toHaveBeenCalledWith({
         characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
         placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
+        stateId: 'd4e5f6a7-b8c9-0123-defa-234567890123',
         userId: mockUserId,
         summary: null,
       });

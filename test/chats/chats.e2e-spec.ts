@@ -30,11 +30,15 @@ jest.mock('ai', () => ({
     (mockGenerateText as (...args: unknown[]) => unknown)(...args),
 }));
 
+const mockLocationId = 'd4e5f6a7-b8c9-0123-defa-234567890123';
+const mockStateId = 'e5f6a7b8-c9d0-4234-bfab-345678901234';
+
 const mockChat = {
   id: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
   placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
   userId: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
   characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
+  stateId: mockStateId,
   summary: null,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -66,6 +70,8 @@ const mockCharacterFacade = {
 
 const mockLocationFacade = {
   findPlace: jest.fn(),
+  findState: jest.fn(),
+  findCharacterState: jest.fn(),
 };
 
 const mockUserFacade = {
@@ -130,16 +136,28 @@ describe('ChatsController (e2e)', () => {
     const validBody = {
       characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
       placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
+      stateId: mockStateId,
     };
 
-    it('should create a chat and return 201', async () => {
-      mockLocationFacade.findPlace.mockResolvedValue({ id: mockChat.placeId });
+    function setupValidCreate() {
+      mockLocationFacade.findPlace.mockResolvedValue({
+        id: mockChat.placeId,
+        locationId: mockLocationId,
+      });
       mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
       mockCharacterFacade.findByIds.mockResolvedValue(
         mockChat.characterIds.map((id) => ({ id })),
       );
+      mockLocationFacade.findState.mockResolvedValue({
+        id: mockStateId,
+        locationId: mockLocationId,
+      });
       mockChatRepository.create.mockReturnValue(mockChat);
       mockChatRepository.save.mockResolvedValue(mockChat);
+    }
+
+    it('should create a chat and return 201', async () => {
+      setupValidCreate();
 
       return request(app.getHttpServer())
         .post('/chats')
@@ -152,6 +170,7 @@ describe('ChatsController (e2e)', () => {
           expect(body.characterIds).toEqual(mockChat.characterIds);
           expect(body.placeId).toBe(mockChat.placeId);
           expect(body.userId).toBe(mockChat.userId);
+          expect(body.stateId).toBe(mockStateId);
           expect(body.summary).toBeNull();
         });
     });
@@ -169,7 +188,10 @@ describe('ChatsController (e2e)', () => {
     });
 
     it('should return 404 when the user does not exist', async () => {
-      mockLocationFacade.findPlace.mockResolvedValue({ id: mockChat.placeId });
+      mockLocationFacade.findPlace.mockResolvedValue({
+        id: mockChat.placeId,
+        locationId: mockLocationId,
+      });
       mockUserFacade.findOne.mockRejectedValue(
         new NotFoundException('User not found'),
       );
@@ -182,7 +204,10 @@ describe('ChatsController (e2e)', () => {
     });
 
     it('should return 404 when a characterId does not exist', async () => {
-      mockLocationFacade.findPlace.mockResolvedValue({ id: mockChat.placeId });
+      mockLocationFacade.findPlace.mockResolvedValue({
+        id: mockChat.placeId,
+        locationId: mockLocationId,
+      });
       mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
       mockCharacterFacade.findByIds.mockResolvedValue([]);
 
@@ -191,6 +216,63 @@ describe('ChatsController (e2e)', () => {
         .set('x-user-id', validUserId)
         .send(validBody)
         .expect(404);
+    });
+
+    it('should return 404 when the state does not exist', async () => {
+      mockLocationFacade.findPlace.mockResolvedValue({
+        id: mockChat.placeId,
+        locationId: mockLocationId,
+      });
+      mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
+      mockCharacterFacade.findByIds.mockResolvedValue(
+        mockChat.characterIds.map((id) => ({ id })),
+      );
+      mockLocationFacade.findState.mockResolvedValue(null);
+
+      return request(app.getHttpServer())
+        .post('/chats')
+        .set('x-user-id', validUserId)
+        .send(validBody)
+        .expect(404);
+    });
+
+    it('should return 400 when the state belongs to a different location', async () => {
+      mockLocationFacade.findPlace.mockResolvedValue({
+        id: mockChat.placeId,
+        locationId: mockLocationId,
+      });
+      mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
+      mockCharacterFacade.findByIds.mockResolvedValue(
+        mockChat.characterIds.map((id) => ({ id })),
+      );
+      mockLocationFacade.findState.mockResolvedValue({
+        id: mockStateId,
+        locationId: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+      });
+
+      return request(app.getHttpServer())
+        .post('/chats')
+        .set('x-user-id', validUserId)
+        .send(validBody)
+        .expect(400);
+    });
+
+    it('should return 400 when stateId is missing', () => {
+      const body = { ...validBody };
+      delete (body as Partial<typeof validBody>).stateId;
+      return request(app.getHttpServer())
+        .post('/chats')
+        .set('x-user-id', validUserId)
+        .send(body)
+        .expect(400);
+    });
+
+    it('should return 400 when stateId is not a valid UUID', () => {
+      return request(app.getHttpServer())
+        .post('/chats')
+        .set('x-user-id', validUserId)
+        .send({ ...validBody, stateId: 'not-a-uuid' })
+        .expect(400);
     });
 
     it('should return 400 when placeId is missing', () => {
@@ -298,6 +380,13 @@ describe('ChatsController (e2e)', () => {
       mockCharacterFacade.findByIds.mockResolvedValue([mockCharacter]);
       mockCharacterFacade.findMemory.mockResolvedValue(null);
       mockCharacterFacade.updateMemory.mockResolvedValue(undefined);
+      mockLocationFacade.findCharacterState.mockResolvedValue({
+        stateId: mockStateId,
+        characterId,
+        placeId: mockChat.placeId,
+        mood: 'curiously focused',
+        activity: 'sketching equations on a napkin',
+      });
       mockPromptsService.render.mockReturnValue('rendered prompt');
       mockStreamText.mockImplementation(() => ({
         pipeUIMessageStreamToResponse: (res: ServerResponse) => {
@@ -323,6 +412,32 @@ describe('ChatsController (e2e)', () => {
       );
       expect(savedRoles).toContain(MessageRole.User);
       expect(savedRoles).not.toContain(MessageRole.System);
+    });
+
+    it('should pass the character mood/activity into the chat system prompt', async () => {
+      setupHappyPath();
+
+      await request(app.getHttpServer())
+        .post(`/chats/${mockChat.id}/message`)
+        .set('x-user-id', validUserId)
+        .set('x-locale', validLocale)
+        .send({ message: 'Hello' })
+        .expect(200);
+
+      expect(mockLocationFacade.findCharacterState).toHaveBeenCalledWith(
+        mockStateId,
+        characterId,
+      );
+      const renderCalls = mockPromptsService.render.mock.calls as [
+        string,
+        { characterState?: { mood: string; activity: string } },
+      ][];
+      const chatSystemCall = renderCalls.find(([key]) => key === 'chat/system');
+      expect(chatSystemCall).toBeDefined();
+      expect(chatSystemCall?.[1].characterState).toEqual({
+        mood: 'curiously focused',
+        activity: 'sketching equations on a napkin',
+      });
     });
 
     it('should stream a response and persist a silence activity message when only activity is sent', async () => {

@@ -38,6 +38,12 @@ export class ChatDto {
   userId: string;
 
   @ApiProperty({
+    description: 'ID of the location state snapshot this chat is anchored to',
+    example: 'd4e5f6a7-b8c9-0123-defa-234567890123',
+  })
+  stateId: string;
+
+  @ApiProperty({
     description: 'Summary of the chat conversation',
     example: 'Discussed the weather and weekend plans.',
     nullable: true,
@@ -61,6 +67,14 @@ export class CreateChatDto {
   })
   @IsUUID('all')
   placeId: string;
+
+  @ApiProperty({
+    description:
+      'ID of the location state snapshot returned by GET /locations/:id/state. Anchors the chat to a specific placement and mood/activity for its characters.',
+    example: 'd4e5f6a7-b8c9-0123-defa-234567890123',
+  })
+  @IsUUID('all')
+  stateId: string;
 }
 
 export class SendMessageDto {

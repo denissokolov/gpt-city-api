@@ -74,7 +74,13 @@ describe('PlaceDistributorService', () => {
       const distribution = [
         {
           placeId: mockLocation.places[0].id,
-          charactersIds: [mockLocation.characters[0].id],
+          characters: [
+            {
+              characterId: mockLocation.characters[0].id,
+              mood: 'curiously focused',
+              activity: 'sketching equations on a napkin',
+            },
+          ],
         },
       ];
       mockGenerateText.mockResolvedValue({ output: distribution });

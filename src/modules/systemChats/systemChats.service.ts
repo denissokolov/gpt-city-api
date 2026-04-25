@@ -118,11 +118,7 @@ export class SystemChatsService {
     const agent = new ToolLoopAgent({
       model: this.MODEL,
       instructions: this.promptsService.render('systemChat/system', {
-        user: {
-          firstName: user.firstName,
-          lastName: user.lastName,
-          title: user.title,
-        },
+        user,
         locale,
       }),
       tools: this.systemChatToolsService.buildTools(),

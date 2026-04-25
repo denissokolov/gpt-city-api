@@ -10,7 +10,9 @@ import {
   LocationStateDto,
   LocationDto,
 } from '../../src/modules/locations/location.dto';
+import { CharacterStateEntity } from '../../src/modules/locations/characterState.entity';
 import { LocationEntity } from '../../src/modules/locations/location.entity';
+import { LocationStateEntity } from '../../src/modules/locations/locationState.entity';
 import { Locale } from '../../src/common/enums/locale.enum';
 import { LocationsController } from '../../src/modules/locations/locations.controller';
 import { LocationsService } from '../../src/modules/locations/locations.service';
@@ -81,6 +83,26 @@ const mockPlaceRepository = {
   remove: jest.fn(),
 };
 
+const stateId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+const mockLocationStateRepository = {
+  create: jest.fn((entity: Partial<LocationStateEntity>) => entity),
+  save: jest.fn(
+    (entity: Partial<LocationStateEntity>) =>
+      ({ ...entity, id: stateId }) as LocationStateEntity,
+  ),
+  findOneBy: jest.fn(),
+};
+
+const mockCharacterStateRepository = {
+  create: jest.fn((entity: Partial<CharacterStateEntity>) => entity),
+  save: jest.fn(
+    (rows: Array<Partial<CharacterStateEntity>>) =>
+      rows as CharacterStateEntity[],
+  ),
+  findOneBy: jest.fn(),
+};
+
 const mockPlaceDistributorService = {
   distributeCharacters: jest.fn(),
 };
@@ -102,6 +124,14 @@ describe('LocationsController (e2e)', () => {
         {
           provide: getRepositoryToken(PlaceEntity),
           useValue: mockPlaceRepository,
+        },
+        {
+          provide: getRepositoryToken(LocationStateEntity),
+          useValue: mockLocationStateRepository,
+        },
+        {
+          provide: getRepositoryToken(CharacterStateEntity),
+          useValue: mockCharacterStateRepository,
         },
         {
           provide: PlaceDistributorService,
@@ -156,7 +186,13 @@ describe('LocationsController (e2e)', () => {
       mockPlaceDistributorService.distributeCharacters.mockResolvedValue([
         {
           placeId: mockLocation.places[0].id,
-          charactersIds: [mockLocation.characters[0].id],
+          characters: [
+            {
+              characterId: mockLocation.characters[0].id,
+              mood: 'curiously focused',
+              activity: 'sketching equations on a napkin',
+            },
+          ],
         },
       ]);
 
@@ -167,6 +203,7 @@ describe('LocationsController (e2e)', () => {
         .expect((res) => {
           const body = res.body as LocationStateDto;
           expect(body.id).toBe(mockLocation.id);
+          expect(body.stateId).toBe(stateId);
           expect(body.name).toBe(mockLocation.name);
           expect(body).not.toHaveProperty('characters');
           expect(body.places).toHaveLength(1);
@@ -215,11 +252,23 @@ describe('LocationsController (e2e)', () => {
       mockPlaceDistributorService.distributeCharacters.mockResolvedValue([
         {
           placeId: mockLocation.places[0].id,
-          charactersIds: [mockLocation.characters[0].id],
+          characters: [
+            {
+              characterId: mockLocation.characters[0].id,
+              mood: 'curious',
+              activity: 'reading a journal',
+            },
+          ],
         },
         {
           placeId: extraPlace.id,
-          charactersIds: [extraCharacter.id],
+          characters: [
+            {
+              characterId: extraCharacter.id,
+              mood: 'thoughtful',
+              activity: 'tracing the night sky',
+            },
+          ],
         },
       ]);
 

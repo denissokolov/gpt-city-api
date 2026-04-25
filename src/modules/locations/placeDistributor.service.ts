@@ -5,9 +5,15 @@ import { generateText, Output } from 'ai';
 import { PromptsService } from '../../common/prompts/prompts.service';
 import { LocationEntity } from './location.entity';
 
+export class PlaceCharacterOutput {
+  characterId: string;
+  mood: string;
+  activity: string;
+}
+
 export class PlaceOutput {
   placeId: string;
-  charactersIds: string[];
+  characters: PlaceCharacterOutput[];
 }
 
 @Injectable()
@@ -40,7 +46,13 @@ export class PlaceDistributorService {
       schema: z.array(
         z.object({
           placeId: z.string(),
-          charactersIds: z.array(z.string()),
+          characters: z.array(
+            z.object({
+              characterId: z.string(),
+              mood: z.string(),
+              activity: z.string(),
+            }),
+          ),
         }),
       ),
     });

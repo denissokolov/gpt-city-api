@@ -36,6 +36,12 @@ export default z.object({
       keyFacts: z.string().nullable(),
     })
     .optional(),
+  characterState: z
+    .object({
+      mood: z.string(),
+      activity: z.string(),
+    })
+    .optional(),
   historyIsTruncated: z.boolean(),
   summary: z.string().optional(),
   locale: z.string(),

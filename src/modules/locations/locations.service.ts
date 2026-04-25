@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CharacterDto, toCharacterDto } from '../characters/character.dto';
 import { CharacterEntity } from '../characters/character.entity';
+import { CharacterStateEntity } from './characterState.entity';
 import { LocationStateDto, PlaceStateDto } from './location.dto';
 import {
   CreateLocationEntityInput,
   LocationEntity,
   UpdateLocationEntityInput,
 } from './location.entity';
+import { LocationStateEntity } from './locationState.entity';
 import {
   CreatePlaceEntityInput,
   PlaceEntity,
@@ -23,6 +25,10 @@ export class LocationsService {
     private readonly locationRepository: Repository<LocationEntity>,
     @InjectRepository(PlaceEntity)
     private readonly placeRepository: Repository<PlaceEntity>,
+    @InjectRepository(LocationStateEntity)
+    private readonly locationStateRepository: Repository<LocationStateEntity>,
+    @InjectRepository(CharacterStateEntity)
+    private readonly characterStateRepository: Repository<CharacterStateEntity>,
     private readonly placeDistributorService: PlaceDistributorService,
   ) {}
 
@@ -50,6 +56,30 @@ export class LocationsService {
         userTime,
       );
 
+    const state = await this.locationStateRepository.save(
+      this.locationStateRepository.create({
+        locationId: location.id,
+        userTime: new Date(userTime),
+      }),
+    );
+
+    const characterStateRows = distribution.flatMap((entry) =>
+      entry.characters.map((character) => ({
+        stateId: state.id,
+        characterId: character.characterId,
+        placeId: entry.placeId,
+        mood: character.mood,
+        activity: character.activity,
+      })),
+    );
+    if (characterStateRows.length > 0) {
+      await this.characterStateRepository.save(
+        characterStateRows.map((row) =>
+          this.characterStateRepository.create(row),
+        ),
+      );
+    }
+
     const charactersById = new Map(
       location.characters.map((character) => [character.id, character]),
     );
@@ -57,8 +87,8 @@ export class LocationsService {
     const charactersByPlaceId = new Map<string, CharacterDto[]>(
       distribution.map((entry) => [
         entry.placeId,
-        entry.charactersIds
-          .map((characterId) => charactersById.get(characterId))
+        entry.characters
+          .map(({ characterId }) => charactersById.get(characterId))
           .filter(
             (character): character is CharacterEntity =>
               character !== undefined,
@@ -79,6 +109,7 @@ export class LocationsService {
       name: location.name,
       description: location.description,
       locale: location.locale,
+      stateId: state.id,
       places,
     };
   }
@@ -127,5 +158,16 @@ export class LocationsService {
   async removePlace(id: string): Promise<void> {
     const place = await this.findPlace(id);
     await this.placeRepository.remove(place);
+  }
+
+  findState(stateId: string): Promise<LocationStateEntity | null> {
+    return this.locationStateRepository.findOneBy({ id: stateId });
+  }
+
+  findCharacterState(
+    stateId: string,
+    characterId: string,
+  ): Promise<CharacterStateEntity | null> {
+    return this.characterStateRepository.findOneBy({ stateId, characterId });
   }
 }

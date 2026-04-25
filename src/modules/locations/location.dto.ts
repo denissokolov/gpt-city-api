@@ -62,6 +62,13 @@ export class PlaceStateDto extends PlaceDto {
 export class LocationStateDto extends LocationDto {
   @ApiProperty({
     description:
+      'Unique identifier of this saved state snapshot. Pass it as `stateId` when creating a chat to anchor the chat to this distribution.',
+    example: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
+  })
+  stateId: string;
+
+  @ApiProperty({
+    description:
       'Places within this location, each with the characters currently present there',
     type: [PlaceStateDto],
   })

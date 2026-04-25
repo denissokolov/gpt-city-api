@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -62,6 +63,18 @@ export class ChatsService {
       const missingIds = dto.characterIds.filter((id) => !foundIds.has(id));
       throw new NotFoundException(
         `Character${missingIds.length > 1 ? 's' : ''} with id${missingIds.length > 1 ? 's' : ''} "${missingIds.join(', ')}" not found`,
+      );
+    }
+
+    const state = await this.locationFacade.findState(dto.stateId);
+    if (!state) {
+      throw new NotFoundException(
+        `Location state with id "${dto.stateId}" not found`,
+      );
+    }
+    if (state.locationId !== place.locationId) {
+      throw new BadRequestException(
+        `Location state "${dto.stateId}" does not belong to the location of place "${dto.placeId}"`,
       );
     }
 
@@ -131,10 +144,14 @@ export class ChatsService {
       });
     }
 
-    const [memory, characters, activityMessage, userMessage] =
+    const [memory, characters, characterState, activityMessage, userMessage] =
       await Promise.all([
         this.characterFacade.findMemory(chat.characterIds[0], user.id),
         this.characterFacade.findByIds(chat.characterIds),
+        this.locationFacade.findCharacterState(
+          chat.stateId,
+          chat.characterIds[0],
+        ),
         activityContent
           ? this.messageRepository.save(
               this.messageRepository.create({
@@ -171,6 +188,7 @@ export class ChatsService {
         location: chat.place.location,
         user,
         memory: memory ?? undefined,
+        characterState: characterState ?? undefined,
         historyIsTruncated: hasMoreMessages,
         summary: chat.summary ?? undefined,
         locale,
