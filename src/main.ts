@@ -7,10 +7,12 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { trace } from '@opentelemetry/api';
 import { apiReference } from '@scalar/nestjs-api-reference';
 
 import { AppModule } from './app.module';
 import { ConfigurationService } from './common/configuration/configuration.service';
+import { USER_ID_HEADER } from './common/decorators/userIdHeader.decorator';
 import { mcpTagDescription } from './mcp.tag';
 import { CharactersModule } from './modules/characters/characters.module';
 import { charactersTagDescription } from './modules/characters/characters.tag';
@@ -32,6 +34,18 @@ async function bootstrap() {
   );
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+
+  // Attach the x-user-id header to the active OpenTelemetry span as `user.id`
+  // so traces in Logfire can be filtered by the user that made the request.
+  const fastify = app.getHttpAdapter().getInstance();
+  fastify.addHook('onRequest', (request, _reply, done) => {
+    const raw = request.headers[USER_ID_HEADER];
+    const userId = Array.isArray(raw) ? raw[0] : raw;
+    if (userId) {
+      trace.getActiveSpan()?.setAttribute('user.id', userId);
+    }
+    done();
+  });
 
   const configService = app.get(ConfigurationService);
 
