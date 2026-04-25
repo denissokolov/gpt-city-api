@@ -205,14 +205,16 @@ export class ChatsService {
         ];
         await Promise.all([
           this.updateChatSummary(chat, fullHistory),
-          this.characterFacade.updateMemory(
-            character,
-            user,
-            chat.place,
-            chat.place.location,
-            memory,
-            fullHistory,
-          ),
+          userMessage
+            ? this.characterFacade.updateMemory(
+                character,
+                user,
+                chat.place,
+                chat.place.location,
+                memory,
+                fullHistory,
+              )
+            : Promise.resolve(),
         ]);
       },
     });

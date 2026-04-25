@@ -325,7 +325,7 @@ describe('ChatsController (e2e)', () => {
       expect(savedRoles).not.toContain(MessageRole.System);
     });
 
-    it('should stream a response and persist a system silence message when only activity is sent', async () => {
+    it('should stream a response and persist a silence activity message when only activity is sent', async () => {
       const lastMessageDate = new Date(Date.now() - 5 * 60 * 1000);
       setupHappyPath([
         {
@@ -350,19 +350,24 @@ describe('ChatsController (e2e)', () => {
       const createCalls = mockMessageRepository.create.mock.calls.map(
         ([input]: [Partial<MessageEntity>]) => input,
       );
-      const systemMessage = createCalls.find(
-        (c: Partial<MessageEntity>) => c.role === MessageRole.System,
+      const activityMessage = createCalls.find(
+        (c: Partial<MessageEntity>) =>
+          c.role === MessageRole.User &&
+          typeof c.content === 'string' &&
+          c.content.startsWith('<activity'),
       );
-      expect(systemMessage).toBeDefined();
-      expect(systemMessage?.content).toMatch(
+      expect(activityMessage).toBeDefined();
+      expect(activityMessage?.content).toMatch(
         /^<activity type="silence" durationSeconds="\d+" \/>$/,
       );
-      expect(systemMessage?.characterId).toBeNull();
-      expect(
-        createCalls.some(
-          (c: Partial<MessageEntity>) => c.role === MessageRole.User,
-        ),
-      ).toBe(false);
+      expect(activityMessage?.characterId).toBeNull();
+      const plainUserMessage = createCalls.find(
+        (c: Partial<MessageEntity>) =>
+          c.role === MessageRole.User &&
+          typeof c.content === 'string' &&
+          !c.content.startsWith('<activity'),
+      );
+      expect(plainUserMessage).toBeUndefined();
 
       const streamCallArgs = mockStreamText.mock.calls[0] as [
         { messages: { role: string; content: string }[] },
@@ -373,7 +378,7 @@ describe('ChatsController (e2e)', () => {
       expect(lastMessage.content).toMatch(/^<activity type="silence"/);
     });
 
-    it('should persist both system and user messages when message and activity are sent together', async () => {
+    it('should persist both activity and user messages when message and activity are sent together', async () => {
       setupHappyPath();
 
       await request(app.getHttpServer())
@@ -383,11 +388,21 @@ describe('ChatsController (e2e)', () => {
         .send({ message: 'Hi', activity: ChatActivity.Silence })
         .expect(200);
 
-      const savedRoles = mockMessageRepository.create.mock.calls.map(
-        ([input]: [Partial<MessageEntity>]) => input.role,
+      const createCalls = mockMessageRepository.create.mock.calls.map(
+        ([input]: [Partial<MessageEntity>]) => input,
       );
-      expect(savedRoles).toContain(MessageRole.System);
-      expect(savedRoles).toContain(MessageRole.User);
+      const userInputs = createCalls.filter(
+        (c: Partial<MessageEntity>) => c.role === MessageRole.User,
+      );
+      expect(
+        userInputs.some(
+          (c: Partial<MessageEntity>) =>
+            typeof c.content === 'string' && c.content.startsWith('<activity'),
+        ),
+      ).toBe(true);
+      expect(
+        userInputs.some((c: Partial<MessageEntity>) => c.content === 'Hi'),
+      ).toBe(true);
     });
 
     it('should return 400 when neither message nor activity is provided', () => {
