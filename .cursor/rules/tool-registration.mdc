@@ -1,0 +1,49 @@
+---
+description: Register every @rekog/mcp-nest tool in the system chat tool set and MCP tag description
+globs: src/**/*.tool.ts
+alwaysApply: false
+---
+
+# Tool Registration
+
+Whenever you define a new tool with `@rekog/mcp-nest` (a `@Tool({...})` decorated method in a `*.tool.ts` file), you must also register it in two places:
+
+1. `src/modules/systemChats/systemChatTools.service.ts` — add an entry inside `buildTools()` so the tool is available in system chats. Import the Zod params schema from the `*.tool.ts` file and call the matching facade (never the service directly — see `architecture.mdc`).
+2. `src/mcp.tag.ts` — add a row to the "Available tools" table in `mcpTagDescription` with the tool's kebab-case name and description.
+
+Use the **kebab-case** tool name (e.g. `create-character`) in `mcp.tag.ts` and the **snake_case** key (e.g. `create_character`) in `systemChatTools.service.ts`, matching the existing entries.
+
+## Example
+
+After adding a new tool in `src/modules/characters/characters.tool.ts`:
+
+```typescript
+@Tool({
+  name: 'archive-character',
+  description: 'Archive a character so they no longer appear in the city',
+  parameters: archiveCharacterParams,
+  annotations: { readOnlyHint: false },
+})
+async archiveCharacter({ id }: { id: string }) { ... }
+```
+
+Add it to `systemChatTools.service.ts`:
+
+```typescript
+import { archiveCharacterParams } from '../characters/characters.tool';
+
+archive_character: tool({
+  description: 'Archive a character so they no longer appear in the city',
+  inputSchema: archiveCharacterParams,
+  execute: async ({ id }) => {
+    await this.characterFacade.archive(id);
+    return `Character ${id} archived`;
+  },
+}),
+```
+
+And add a row to `mcp.tag.ts`:
+
+```typescript
+| \`archive-character\` | Archive a character so they no longer appear in the city |
+```

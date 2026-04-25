@@ -19,6 +19,7 @@ import { SystemChatsService } from '../../src/modules/systemChats/systemChats.se
 import { SystemChatToolsService } from '../../src/modules/systemChats/systemChatTools.service';
 import { UserFacade } from '../../src/modules/users/user.facade';
 import { CharacterFacade } from '../../src/modules/characters/character.facade';
+import { ChatFacade } from '../../src/modules/chats/chat.facade';
 import { LocationFacade } from '../../src/modules/locations/location.facade';
 
 const mockUserId = 'c3d4e5f6-a7b8-4012-bdef-123456789012';
@@ -61,6 +62,7 @@ const mockSystemMessageRepository = {
 
 const mockUserFacade = {
   findOne: jest.fn(),
+  update: jest.fn(),
 };
 
 const mockCharacterFacade = {
@@ -69,6 +71,11 @@ const mockCharacterFacade = {
   create: jest.fn(),
   update: jest.fn(),
   remove: jest.fn(),
+  removeMemoriesByUserId: jest.fn(),
+};
+
+const mockChatFacade = {
+  removeAllByUserId: jest.fn(),
 };
 
 const mockLocationFacade = {
@@ -107,6 +114,7 @@ describe('SystemChatsController (e2e)', () => {
         },
         { provide: UserFacade, useValue: mockUserFacade },
         { provide: CharacterFacade, useValue: mockCharacterFacade },
+        { provide: ChatFacade, useValue: mockChatFacade },
         { provide: LocationFacade, useValue: mockLocationFacade },
         { provide: PromptsService, useValue: mockPromptsService },
       ],

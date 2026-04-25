@@ -9,6 +9,7 @@ import {
   listCharactersParams,
   updateCharacterParams,
 } from '../characters/characters.tool';
+import { ChatFacade } from '../chats/chat.facade';
 import { LocationFacade } from '../locations/location.facade';
 import {
   createLocationParams,
@@ -20,12 +21,16 @@ import {
   updateLocationParams,
   updatePlaceParams,
 } from '../locations/locations.tool';
+import { UserFacade } from '../users/user.facade';
+import { clearUserHistoryParams, updateUserParams } from '../users/users.tool';
 
 @Injectable()
 export class SystemChatToolsService {
   constructor(
     private readonly characterFacade: CharacterFacade,
+    private readonly chatFacade: ChatFacade,
     private readonly locationFacade: LocationFacade,
+    private readonly userFacade: UserFacade,
   ) {}
 
   buildTools(): ToolSet {
@@ -134,6 +139,31 @@ export class SystemChatToolsService {
         execute: async ({ id }) => {
           await this.locationFacade.removePlace(id);
           return `Place ${id} deleted`;
+        },
+      }),
+      update_user: tool({
+        description: 'Update an existing user profile by ID',
+        inputSchema: updateUserParams,
+        execute: async (args) => {
+          const user = await this.userFacade.update(args);
+          return JSON.stringify(user, null, 2);
+        },
+      }),
+      clear_user_history: tool({
+        description:
+          "Wipe a user's chat history with characters: deletes all character memories about the user, all chats they own, and all messages in those chats. Does not touch system chats, system messages, or the user profile itself.",
+        inputSchema: clearUserHistoryParams,
+        execute: async ({ id }) => {
+          const user = await this.userFacade.findOne(id);
+          const [{ chats, messages }, memories] = await Promise.all([
+            this.chatFacade.removeAllByUserId(user.id),
+            this.characterFacade.removeMemoriesByUserId(user.id),
+          ]);
+          return JSON.stringify(
+            { userId: user.id, deleted: { memories, chats, messages } },
+            null,
+            2,
+          );
         },
       }),
     };
