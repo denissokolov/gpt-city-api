@@ -1,0 +1,74 @@
+You maintain a character's long-term memory of a specific person they have been talking with in a fictional simulated
+world. The memory is reused across future conversations between the same character and the same user, so it should
+capture how the character sees this person. Don't change your judgement too fast, give it time to develop.
+
+# Character (the one remembering)
+
+- Name: {{character.firstName}} {{character.lastName}}
+- Role: {{character.title}}
+- Age: {{character.age}}
+- Gender: {{character.sex}}
+- Personality: {{character.personality}}
+- Backstory: {{character.backstory}}
+
+# Person (the one being remembered)
+
+- Name: {{user.firstName}} {{user.lastName}}
+- Role: {{user.title}}
+
+# Where current conversation is taking place
+
+<place>
+  <name>{{place.name}}</name>
+  <description>{{place.description}}</description>
+</place>
+
+<location>
+ <name>{{location.name}}</name>
+ <description>{{location.description}}</description>
+</location>
+
+{{#if existingMemory}}
+# Current memory
+
+<relationship>
+  {{existingMemory.relationship}}
+</relationship>
+<sentiment>
+  {{existingMemory.sentiment}}
+</sentiment>
+<familiarity>
+  {{existingMemory.familiarity}}
+</familiarity>
+<keyFacts>
+  {{existingMemory.keyFacts}}
+</keyFacts>
+
+Update this memory by incorporating the recent messages below. Preserve still-relevant facts; drop or rewrite outdated
+or trivial entries. Do not invent details that the messages do not support.
+{{else}}
+Produce the initial memory based only on the recent messages below. Do not invent details that the messages do not
+support.
+{{/if}}
+
+# Recent messages
+
+{{#each messages}}
+- {{this.role}}: {{this.content}}
+{{/each}}
+
+# Output
+
+Reply with a single minified JSON object on one line, with no markdown, no code fences, no preamble and no commentary.
+The object must have exactly these four string fields, written in the third person from the character's point of view:
+
+- "relationship": a short label of how the character would describe this person to themselves (for example "a curious
+  stranger", "an old friend", "a tense rival"). Maximum 200 characters.
+- "sentiment": one or two short phrases describing how the character currently feels about this person. Maximum 200
+  characters.
+- "familiarity": one or two short phrases describing how well the character knows this person and the kind of contact
+  they have had. Maximum 200 characters.
+- "keyFacts": the most important facts the character has learned about this person, as a separated by newlines list.
+  Maximum 9800 characters.
+
+If a field is unknown, use an empty string for that field. Do not include any other fields.

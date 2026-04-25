@@ -28,6 +28,14 @@ export default z.object({
     title: z.string(),
     backstory: z.string(),
   }),
+  memory: z
+    .object({
+      relationship: z.string().nullable(),
+      sentiment: z.string().nullable(),
+      familiarity: z.string().nullable(),
+      keyFacts: z.string().nullable(),
+    })
+    .optional(),
   historyIsTruncated: z.boolean(),
   summary: z.string().optional(),
   locale: z.string(),

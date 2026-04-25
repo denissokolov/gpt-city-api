@@ -106,17 +106,20 @@ export class ChatsService {
       content: dto.message,
     });
 
-    const userMessage = await this.messageRepository.save(
-      this.messageRepository.create({
-        chatId: chat.id,
-        userId: chat.userId,
-        role: MessageRole.User,
-        content: dto.message,
-        characterId: null,
-      }),
-    );
+    const [memory, characters, userMessage] = await Promise.all([
+      this.characterFacade.findMemory(chat.characterIds[0], user.id),
+      this.characterFacade.findByIds(chat.characterIds),
+      this.messageRepository.save(
+        this.messageRepository.create({
+          chatId: chat.id,
+          userId: chat.userId,
+          role: MessageRole.User,
+          content: dto.message,
+          characterId: null,
+        }),
+      ),
+    ]);
 
-    const characters = await this.characterFacade.findByIds(chat.characterIds);
     const character = characters[0];
 
     const hasMoreMessages = history.length > this.MAX_MESSAGE_HISTORY_LENGTH;
@@ -128,6 +131,7 @@ export class ChatsService {
         place: chat.place,
         location: chat.place.location,
         user,
+        memory: memory ?? undefined,
         historyIsTruncated: hasMoreMessages,
         summary: chat.summary ?? undefined,
         locale,
@@ -154,10 +158,21 @@ export class ChatsService {
             characterId: character.id,
           }),
         );
-        await this.updateChatSummary(chat, [
+        const fullHistory = [
           ...history.slice(0, this.MAX_MESSAGE_HISTORY_LENGTH).reverse(),
           userMessage,
           assistantMessage,
+        ];
+        await Promise.all([
+          this.updateChatSummary(chat, fullHistory),
+          this.characterFacade.updateMemory(
+            character,
+            user,
+            chat.place,
+            chat.place.location,
+            memory,
+            fullHistory,
+          ),
         ]);
       },
     });
@@ -187,7 +202,6 @@ export class ChatsService {
       this.logger.warn(`Failed to generate summary for chat "${chat.id}"`);
       return;
     }
-    chat.summary = summary;
-    await this.chatRepository.save(chat);
+    await this.chatRepository.update(chat.id, { summary });
   }
 }

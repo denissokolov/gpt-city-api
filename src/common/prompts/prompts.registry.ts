@@ -4,6 +4,7 @@ import placeSystemPromptSchema from './place/system.schema';
 import placeUserPromptSchema from './place/user.schema';
 import chatSystemPromptSchema from './chat/system.schema';
 import chatSummaryPromptSchema from './chatSummary/prompt.schema';
+import characterMemoryPromptSchema from './characterMemory/prompt.schema';
 import systemChatSystemPromptSchema from './systemChat/system.schema';
 
 export const promptRegistry = {
@@ -11,6 +12,7 @@ export const promptRegistry = {
   'place/user': placeUserPromptSchema,
   'chat/system': chatSystemPromptSchema,
   'chatSummary/prompt': chatSummaryPromptSchema,
+  'characterMemory/prompt': characterMemoryPromptSchema,
   'systemChat/system': systemChatSystemPromptSchema,
 } as const satisfies Record<string, z.ZodObject>;
 

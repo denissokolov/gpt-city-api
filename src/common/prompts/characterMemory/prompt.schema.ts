@@ -1,0 +1,47 @@
+import { z } from 'zod';
+
+import { MessageRole } from '../../../modules/chats/message.enum';
+
+export default z.object({
+  character: z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    title: z.string(),
+    age: z.number(),
+    sex: z.string(),
+    personality: z.string(),
+    backstory: z.string(),
+    systemInstructions: z.string().nullable(),
+  }),
+  place: z.object({
+    name: z.string(),
+    description: z.string(),
+  }),
+  location: z.object({
+    name: z.string(),
+    description: z.string(),
+    locale: z.string(),
+  }),
+  user: z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    age: z.number(),
+    sex: z.string(),
+    title: z.string(),
+    backstory: z.string(),
+  }),
+  existingMemory: z
+    .object({
+      relationship: z.string().nullable(),
+      sentiment: z.string().nullable(),
+      familiarity: z.string().nullable(),
+      keyFacts: z.string().nullable(),
+    })
+    .optional(),
+  messages: z.array(
+    z.object({
+      role: z.enum(MessageRole),
+      content: z.string(),
+    }),
+  ),
+});
