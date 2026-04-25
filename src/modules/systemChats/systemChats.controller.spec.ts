@@ -38,6 +38,7 @@ describe('SystemChatsController', () => {
             findAllForUser: jest.fn(),
             create: jest.fn(),
             findMessages: jest.fn(),
+            remove: jest.fn(),
           },
         },
       ],
@@ -69,6 +70,16 @@ describe('SystemChatsController', () => {
         userId: mockChat.userId,
         title: null,
       });
+    });
+  });
+
+  describe('remove', () => {
+    it('should delete the chat owned by the current user', async () => {
+      service.remove.mockResolvedValue(undefined);
+
+      await controller.remove(mockChat.id, mockChat.userId);
+
+      expect(service.remove).toHaveBeenCalledWith(mockChat.id, mockChat.userId);
     });
   });
 

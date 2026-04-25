@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   ParseUUIDPipe,
   Post,
@@ -48,6 +50,19 @@ export class SystemChatsController {
   @ApiResponse({ status: 201, type: SystemChatDto })
   create(@UserIdHeader() userId: string): Promise<SystemChatDto> {
     return this.systemChatsService.create({ userId, title: null });
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Delete a system chat owned by the current user' })
+  @ApiResponse({ status: 204, description: 'Chat deleted' })
+  @ApiResponse({ status: 403, description: 'User does not own the chat' })
+  @ApiResponse({ status: 404, description: 'Chat not found' })
+  remove(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @UserIdHeader() userId: string,
+  ): Promise<void> {
+    return this.systemChatsService.remove(id, userId);
   }
 
   @Get(':id/messages')

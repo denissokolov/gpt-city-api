@@ -220,6 +220,54 @@ describe('SystemChatsController (e2e)', () => {
     });
   });
 
+  describe('DELETE /system-chats/:id', () => {
+    it('should delete the chat owned by the current user and return 204', async () => {
+      mockSystemChatRepository.findOneBy.mockResolvedValue(mockChat);
+      mockSystemChatRepository.remove.mockResolvedValue(mockChat);
+
+      return request(app.getHttpServer())
+        .delete(`/system-chats/${mockChatId}`)
+        .set('x-user-id', mockUserId)
+        .expect(204)
+        .expect(() => {
+          expect(mockSystemChatRepository.remove).toHaveBeenCalledWith(
+            mockChat,
+          );
+        });
+    });
+
+    it('should return 404 when the chat does not exist', async () => {
+      mockSystemChatRepository.findOneBy.mockResolvedValue(null);
+
+      return request(app.getHttpServer())
+        .delete(`/system-chats/${mockChatId}`)
+        .set('x-user-id', mockUserId)
+        .expect(404);
+    });
+
+    it('should return 403 when the user does not own the chat', async () => {
+      mockSystemChatRepository.findOneBy.mockResolvedValue(mockChat);
+
+      return request(app.getHttpServer())
+        .delete(`/system-chats/${mockChatId}`)
+        .set('x-user-id', otherUserId)
+        .expect(403);
+    });
+
+    it('should return 400 when chat id is not a UUID', () => {
+      return request(app.getHttpServer())
+        .delete('/system-chats/not-a-uuid')
+        .set('x-user-id', mockUserId)
+        .expect(400);
+    });
+
+    it('should return 400 when x-user-id header is missing', () => {
+      return request(app.getHttpServer())
+        .delete(`/system-chats/${mockChatId}`)
+        .expect(400);
+    });
+  });
+
   describe('GET /system-chats/:id/messages', () => {
     it('should return messages of the chat', async () => {
       mockSystemChatRepository.findOneBy.mockResolvedValue(mockChat);

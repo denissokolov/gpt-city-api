@@ -56,6 +56,11 @@ export class SystemChatsService {
     return this.systemChatRepository.save(chat);
   }
 
+  async remove(chatId: string, userId: string): Promise<void> {
+    const chat = await this.findOwnedChat(chatId, userId);
+    await this.systemChatRepository.remove(chat);
+  }
+
   async findMessages(
     chatId: string,
     userId: string,
