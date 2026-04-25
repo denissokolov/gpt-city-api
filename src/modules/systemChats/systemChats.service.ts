@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { ModelMessage, stepCountIs, streamText, ToolContent } from 'ai';
 
 import { PromptsService } from '../../common/prompts/prompts.service';
@@ -39,7 +39,7 @@ export class SystemChatsService {
   async findAllForUser(userId: string): Promise<SystemChatEntity[]> {
     await this.userFacade.findOne(userId);
     return this.systemChatRepository.find({
-      where: { userId },
+      where: { userId, title: Not(IsNull()) },
       order: { createdAt: 'DESC' },
     });
   }
