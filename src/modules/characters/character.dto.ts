@@ -67,6 +67,15 @@ export class CharacterDto {
     example: Provider.OpenAI,
   })
   provider: Provider;
+
+  @ApiProperty({
+    description:
+      'Optional custom system instructions appended to the default chat system prompt for this character. Use it to give the character extra in-world instructions, mannerisms or constraints that the default prompt does not cover.',
+    example:
+      'Always speak in short, blunt sentences. Refuse to discuss politics.',
+    nullable: true,
+  })
+  systemInstructions: string | null;
 }
 
 export function toCharacterDto(character: CharacterEntity): CharacterDto {
@@ -81,5 +90,6 @@ export function toCharacterDto(character: CharacterEntity): CharacterDto {
     backstory: character.backstory,
     model: character.model,
     provider: character.provider,
+    systemInstructions: character.systemInstructions,
   };
 }

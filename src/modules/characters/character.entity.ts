@@ -51,6 +51,9 @@ export class CharacterEntity {
   @JoinColumn({ name: 'locationId' })
   location: LocationEntity;
 
+  @Column('text', { nullable: true })
+  systemInstructions: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 

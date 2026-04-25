@@ -41,6 +41,7 @@ const mockLocationState: LocationStateDto = {
           backstory: 'Grew up fascinated by the stars.',
           model: 'gpt-4o',
           provider: Provider.OpenAI,
+          systemInstructions: null,
         },
       ],
     },

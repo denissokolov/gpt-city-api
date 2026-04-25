@@ -33,6 +33,12 @@ export const createCharacterParams = z.object({
     .describe('AI model used to power the character (e.g. "gpt-4o")'),
   provider: z.enum(Provider).describe('AI provider that hosts the model'),
   locationId: z.uuid().describe('UUID of the location this character lives in'),
+  systemInstructions: z
+    .string()
+    .nullable()
+    .describe(
+      'Optional custom system instructions appended to the default chat system prompt for this character. Use null to leave it unset.',
+    ),
 });
 
 export const updateCharacterParams = z.object({
@@ -50,6 +56,13 @@ export const updateCharacterParams = z.object({
     .uuid()
     .optional()
     .describe('New location UUID (to move the character)'),
+  systemInstructions: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      'New custom system instructions appended to the default chat system prompt. Pass null to clear them, omit to keep the existing value.',
+    ),
 });
 
 export const deleteCharacterParams = z.object({

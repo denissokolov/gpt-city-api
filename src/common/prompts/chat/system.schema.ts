@@ -9,6 +9,7 @@ export default z.object({
     sex: z.string(),
     personality: z.string(),
     backstory: z.string(),
+    systemInstructions: z.string().nullable(),
   }),
   place: z.object({
     name: z.string(),
