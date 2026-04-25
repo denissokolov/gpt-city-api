@@ -1,5 +1,5 @@
 import { Controller, Get, Headers, Param } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { LocationStateDto, LocationDto } from './location.dto';
 import { LocationsService } from './locations.service';
 
@@ -23,6 +23,11 @@ export class LocationsController {
   })
   @ApiResponse({ status: 200, type: LocationStateDto })
   @ApiResponse({ status: 404, description: 'Location not found' })
+  @ApiHeader({
+    name: 'x-user-time',
+    description: 'User time',
+    example: '2026-04-19T10:00:00.000Z',
+  })
   getState(
     @Param('id') id: string,
     @Headers('x-user-time') userTime: string,

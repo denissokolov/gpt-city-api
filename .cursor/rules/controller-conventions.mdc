@@ -45,6 +45,73 @@ sex: Sex;
 - Annotate every endpoint with the appropriate `@ApiOperation()` and `@ApiResponse()` decorators.
 - Never put business logic inside a controller method. Delegate all logic to an injected service.
 
+## Headers and parameters
+
+Anything a client sends — headers, route params, query params — must be documented with `@nestjs/swagger` so it shows up in the Scalar API reference. If it's not in the OpenAPI document, it effectively doesn't exist for API consumers.
+
+- **Headers**: every custom request header must be declared with `@ApiHeader({ name, description, required, example, enum? })`. Do not read a header with `@Headers('x-foo')` without a matching `@ApiHeader`.
+- **Path params**: declare each route parameter with `@ApiParam({ name, description, example, type? / enum? })`. NestJS infers the name from the route, but the human-readable description and example must be explicit.
+- **Query params**: declare each query parameter with `@ApiQuery({ name, description, required, example, type? / enum? })`. The same applies to optional filters.
+- For headers or params that are reused across many endpoints, wrap the `@ApiHeader` / `@ApiParam` / `@ApiQuery` in a custom decorator (next to the value-extraction decorator) and apply both at the call site. See `src/common/decorators/localeHeader.decorator.ts` for the pattern: an `ApiLocaleHeader()` decorator pairs with the `LocaleHeader()` value extractor.
+
+```typescript
+// ❌ BAD — header read but not documented
+@Get(':id/state')
+getState(
+  @Param('id') id: string,
+  @Headers('x-user-time') userTime: string,
+): Promise<LocationStateDto> { /* ... */ }
+
+// ✅ GOOD — both header and param documented
+@Get(':id/state')
+@ApiParam({
+  name: 'id',
+  description: 'Unique identifier of the location',
+  example: '550e8400-e29b-41d4-a716-446655440000',
+})
+@ApiUserTimeHeader()
+getState(
+  @Param('id', new ParseUUIDPipe()) id: string,
+  @UserTimeHeader() userTime: string,
+): Promise<LocationStateDto> { /* ... */ }
+```
+
+## Swagger / Scalar registration
+
+Every controller's module must be wired into the Swagger document in `src/main.ts` so it appears in the Scalar API reference.
+
+- Add the module to the `include: [...]` array passed to `SwaggerModule.createDocument(...)`. Without this, the controller's endpoints will not be rendered.
+- Add a `.addTag('<tag>', <tagDescription>)` call on the `DocumentBuilder` for the controller's `@ApiTags()` value, describing the module's purpose and listing any noteworthy behaviour (e.g. tools the AI exposes, streaming responses, special headers).
+- Keep tag descriptions colocated with the module — do not inline them in `main.ts`. Export a single `<feature>TagDescription` constant from `src/modules/<feature>/<feature>.tag.ts` and import it into `main.ts`.
+- Tag descriptions support Markdown (headings, tables, code blocks). Use them to explain *why* the module exists, not just *what* its endpoints do — endpoint-level docs belong on `@ApiOperation()`.
+
+```typescript
+// src/modules/systemChats/systemChats.tag.ts
+export const systemChatsTagDescription = `
+System chats are AI-driven conversations that let an authenticated user manage
+the GPT City world through natural language.
+
+## Available tools
+
+| Tool | Description |
+|------|-------------|
+| \`list_characters\` | List all characters in the city |
+`.trim();
+
+// src/main.ts
+import { SystemChatsModule } from './modules/systemChats/systemChats.module';
+import { systemChatsTagDescription } from './modules/systemChats/systemChats.tag';
+
+const config = new DocumentBuilder()
+  .setTitle('GPT City API')
+  .addTag('system-chats', systemChatsTagDescription)
+  .build();
+
+const document = SwaggerModule.createDocument(app, config, {
+  include: [/* ...other modules, */ SystemChatsModule],
+});
+```
+
 ## Tests
 
 Every controller requires two test files. Create them alongside the implementation:

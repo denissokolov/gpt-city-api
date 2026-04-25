@@ -9,64 +9,19 @@ import { apiReference } from '@scalar/nestjs-api-reference';
 
 import { AppModule } from './app.module';
 import { ConfigurationService } from './common/configuration/configuration.service';
+import { mcpTagDescription } from './mcp.tag';
 import { CharactersModule } from './modules/characters/characters.module';
+import { charactersTagDescription } from './modules/characters/characters.tag';
 import { ChatsModule } from './modules/chats/chats.module';
+import { chatsTagDescription } from './modules/chats/chats.tag';
 import { HealthModule } from './modules/health/health.module';
+import { healthTagDescription } from './modules/health/health.tag';
 import { LocationsModule } from './modules/locations/locations.module';
+import { locationsTagDescription } from './modules/locations/locations.tag';
 import { SystemChatsModule } from './modules/systemChats/systemChats.module';
+import { systemChatsTagDescription } from './modules/systemChats/systemChats.tag';
 import { UsersModule } from './modules/users/users.module';
-
-const mcpTagDescription = `
-This server exposes an [MCP](https://modelcontextprotocol.io/) endpoint that AI
-clients (Cursor, Claude Desktop, etc.) can connect to.
-
-## Available tools
-
-| Tool | Description |
-|------|-------------|
-| \`list-characters\` | List all characters in the city |
-| \`get-character\` | Get a single character by ID |
-| \`create-character\` | Create a new character |
-| \`update-character\` | Update an existing character |
-| \`delete-character\` | Delete a character |
-| \`list-locations\` | List all locations in the city |
-| \`get-location\` | Get a single location by ID |
-| \`create-location\` | Create a new location |
-| \`update-location\` | Update an existing location |
-| \`delete-location\` | Delete a location |
-| \`create-place\` | Create a place within a location |
-| \`update-place\` | Update an existing place |
-| \`delete-place\` | Delete a place |
-
-## Connecting
-
-Add the server to your MCP client configuration.
-Replace \`<base-url>\` with the deployment URL or \`http://localhost:3000\` for local development.
-
-**Streamable HTTP (recommended)**
-
-\`\`\`json
-{
-  "mcpServers": {
-    "gpt-city": {
-      "url": "<base-url>/mcp"
-    }
-  }
-}
-\`\`\`
-
-**SSE**
-
-\`\`\`json
-{
-  "mcpServers": {
-    "gpt-city": {
-      "url": "<base-url>/sse"
-    }
-  }
-}
-\`\`\`
-`.trim();
+import { usersTagDescription } from './modules/users/users.tag';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -91,6 +46,12 @@ async function bootstrap() {
         'This API provides endpoints for managing characters, locations, places, chats, and monitoring service health.',
     )
     .setVersion(configService.getServerVersion())
+    .addTag('health', healthTagDescription)
+    .addTag('users', usersTagDescription)
+    .addTag('characters', charactersTagDescription)
+    .addTag('locations', locationsTagDescription)
+    .addTag('chats', chatsTagDescription)
+    .addTag('system-chats', systemChatsTagDescription)
     .addTag('mcp', mcpTagDescription)
     .build();
   const document = SwaggerModule.createDocument(app, config, {
