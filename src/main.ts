@@ -13,6 +13,7 @@ import { CharactersModule } from './modules/characters/characters.module';
 import { ChatsModule } from './modules/chats/chats.module';
 import { HealthModule } from './modules/health/health.module';
 import { LocationsModule } from './modules/locations/locations.module';
+import { SystemChatsModule } from './modules/systemChats/systemChats.module';
 import { UsersModule } from './modules/users/users.module';
 
 const mcpTagDescription = `
@@ -97,6 +98,7 @@ async function bootstrap() {
       HealthModule,
       CharactersModule,
       ChatsModule,
+      SystemChatsModule,
       LocationsModule,
       UsersModule,
     ],
