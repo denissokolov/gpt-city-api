@@ -5,7 +5,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
-import { ModelMessage, stepCountIs, streamText, ToolContent } from 'ai';
+import {
+  ModelMessage,
+  stepCountIs,
+  streamText,
+  ToolContent,
+  ToolLoopAgent,
+} from 'ai';
 
 import { PromptsService } from '../../common/prompts/prompts.service';
 import { UserFacade } from '../users/user.facade';
@@ -104,9 +110,9 @@ export class SystemChatsService {
       await this.systemChatRepository.save(chat);
     }
 
-    return streamText({
+    const agent = new ToolLoopAgent({
       model: this.MODEL,
-      system: this.promptsService.render('systemChat/system', {
+      instructions: this.promptsService.render('systemChat/system', {
         user: {
           firstName: user.firstName,
           lastName: user.lastName,
@@ -114,7 +120,6 @@ export class SystemChatsService {
         },
         locale,
       }),
-      messages,
       tools: this.systemChatToolsService.buildTools(),
       stopWhen: stepCountIs(this.MAX_TOOL_STEPS),
       experimental_telemetry: {
@@ -134,6 +139,8 @@ export class SystemChatsService {
         );
       },
     });
+
+    return agent.stream({ messages });
   }
 
   private async findOwnedChat(
