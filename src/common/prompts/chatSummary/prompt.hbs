@@ -1,0 +1,27 @@
+You summarize role-play conversations between a user and a fictional character so the summary can be reused as long-term
+memory in future conversations.
+
+{{#if existingSummary}}
+<previous-summary>
+  {{existingSummary}}
+</previous-summary>
+
+{{existingSummary}}
+
+Update this summary by incorporating the recent messages below. Preserve facts, decisions, names, relationships and
+emotional beats. Drop trivial small talk and outdated details that are no longer relevant.
+{{else}}
+Produce an initial summary of this conversation. Capture facts, decisions, names, relationships and emotional beats.
+Drop trivial small talk.
+{{/if}}
+
+# Recent messages
+
+{{#each messages}}
+- {{this.role}}: {{this.content}}
+{{/each}}
+
+# Output
+
+Reply with the new summary as plain prose, written in the third person. Do not include any
+preamble, headings, bullet points or meta commentary. Do not address the reader.

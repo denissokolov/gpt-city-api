@@ -1,11 +1,12 @@
 import {
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ModelMessage, streamText } from 'ai';
+import { IsNull, Not, Repository } from 'typeorm';
+import { generateText, ModelMessage, streamText } from 'ai';
 
 import { ChatEntity, CreateChatEntityInput } from './chat.entity';
 import { MessageEntity } from './message.entity';
@@ -19,7 +20,10 @@ import { Locale } from '../../common/enums/locale.enum';
 
 @Injectable()
 export class ChatsService {
+  private readonly logger = new Logger(ChatsService.name);
+
   private readonly MAX_MESSAGE_HISTORY_LENGTH = 100;
+  private readonly SUMMARY_MODEL = 'anthropic/claude-haiku-4.5';
 
   constructor(
     @InjectRepository(ChatEntity)
@@ -59,7 +63,7 @@ export class ChatsService {
     locale: Locale,
     dto: SendMessageDto,
   ): Promise<ReturnType<typeof streamText>> {
-    const [chat, user, history] = await Promise.all([
+    const [chat, user, history, previousChats] = await Promise.all([
       this.chatRepository.findOne({
         where: { id: chatId },
         relations: ['place', 'place.location'],
@@ -69,6 +73,11 @@ export class ChatsService {
         where: { chatId: chatId },
         order: { createdAt: 'DESC' },
         take: this.MAX_MESSAGE_HISTORY_LENGTH + 1,
+      }),
+      this.chatRepository.find({
+        where: { userId, summary: Not(IsNull()), id: Not(chatId) },
+        order: { createdAt: 'DESC' },
+        take: 10,
       }),
     ]);
     if (!chat) {
@@ -96,7 +105,7 @@ export class ChatsService {
       content: dto.message,
     });
 
-    await this.messageRepository.save(
+    const userMessage = await this.messageRepository.save(
       this.messageRepository.create({
         chatId: chat.id,
         userId: chat.userId,
@@ -121,6 +130,10 @@ export class ChatsService {
         historyIsTruncated: hasMoreMessages,
         summary: chat.summary ?? undefined,
         locale,
+        previousChats: previousChats.map((c) => ({
+          summary: c.summary ?? undefined,
+          updatedAt: c.updatedAt,
+        })),
       }),
       messages,
       experimental_telemetry: {
@@ -130,7 +143,7 @@ export class ChatsService {
         if (!text) {
           return;
         }
-        await this.messageRepository.save(
+        const assistantMessage = await this.messageRepository.save(
           this.messageRepository.create({
             chatId: chat.id,
             userId: chat.userId,
@@ -139,7 +152,40 @@ export class ChatsService {
             characterId: character.id,
           }),
         );
+        await this.updateChatSummary(chat, [
+          ...history.slice(0, this.MAX_MESSAGE_HISTORY_LENGTH).reverse(),
+          userMessage,
+          assistantMessage,
+        ]);
       },
     });
+  }
+
+  private async updateChatSummary(
+    chat: ChatEntity,
+    history: MessageEntity[],
+  ): Promise<void> {
+    if (history.length === 0) {
+      return;
+    }
+
+    const { text } = await generateText({
+      model: this.SUMMARY_MODEL,
+      prompt: this.promptsService.render('chatSummary/prompt', {
+        existingSummary: chat.summary ?? undefined,
+        messages: history,
+      }),
+      experimental_telemetry: {
+        isEnabled: true,
+      },
+    });
+
+    const summary = text.trim();
+    if (!summary) {
+      this.logger.warn(`Failed to generate summary for chat "${chat.id}"`);
+      return;
+    }
+    chat.summary = summary;
+    await this.chatRepository.save(chat);
   }
 }

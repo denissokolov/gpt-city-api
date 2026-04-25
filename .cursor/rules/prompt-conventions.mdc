@@ -18,6 +18,29 @@ src/common/prompts/
   prompts.registry.ts  # add the new key here
 ```
 
+## One group per LLM call
+
+A `<group>` represents a single, self-contained LLM call (one feature / one model invocation). Files inside a group only differ by the role they play in that one call: `system.hbs` for the system prompt, `user.hbs` for the user prompt — never by feature.
+
+If you find yourself adding a second, unrelated prompt to an existing group (e.g. a summarization step next to a chat completion), create a new group instead. Group names should describe the call, not the surrounding domain.
+
+```
+# ❌ BAD — two unrelated LLM calls share the `chat` group
+src/common/prompts/
+  chat/
+    system.hbs    # system prompt for the chat completion
+    summary.hbs   # ← different LLM call (summarization), wrong place
+
+# ✅ GOOD — each LLM call gets its own group
+src/common/prompts/
+  chat/
+    system.hbs        # chat completion
+  chatSummary/
+    system.hbs        # summarization call
+```
+
+Registry keys mirror this: `chat/system`, `chatSummary/system` — not `chat/summary`.
+
 ## Render via PromptsService
 
 Services must inject `PromptsService` and call `render(key, input)`. Never call `streamText`/`generateText` (or similar) with a string literal in `system` or `prompt`.

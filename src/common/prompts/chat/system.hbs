@@ -60,3 +60,14 @@ person.
 The conversation has been truncated due to message history length. Summary of the conversation:
 {{chat.summary}}
 {{/if}}
+
+{{#if previousChats}}
+<previous-chats>
+  {{#each previousChats}}
+   <chat>
+    <summary>{{this.summary}}</summary>
+    <updatedAt>{{this.updatedAt}}</updatedAt>
+   </chat>
+  {{/each}}
+</previous-chats>
+{{/if}}

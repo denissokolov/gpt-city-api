@@ -30,4 +30,10 @@ export default z.object({
   historyIsTruncated: z.boolean(),
   summary: z.string().optional(),
   locale: z.string(),
+  previousChats: z.array(
+    z.object({
+      summary: z.string().optional(),
+      updatedAt: z.date(),
+    }),
+  ),
 });
