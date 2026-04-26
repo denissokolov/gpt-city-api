@@ -29,6 +29,7 @@ import { ChatsService } from './chats.service';
 @Controller('chats')
 export class ChatsController {
   private readonly SILENCE_IDLE_MS = 10_000;
+  private readonly MAX_SILENCE_EVENTS = 5;
 
   constructor(private readonly chatsService: ChatsService) {}
 
@@ -49,6 +50,7 @@ export class ChatsController {
     return {
       ...chat,
       silenceIdleMs: this.SILENCE_IDLE_MS,
+      maxSilenceEvents: this.MAX_SILENCE_EVENTS,
     };
   }
 

@@ -56,6 +56,13 @@ export class ChatDto {
     nullable: true,
   })
   silenceIdleMs: number | null;
+
+  @ApiProperty({
+    description: 'Maximum number of silence events to send in a row',
+    example: 5,
+    nullable: true,
+  })
+  maxSilenceEvents: number | null;
 }
 
 export class CreateChatDto {
