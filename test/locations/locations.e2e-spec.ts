@@ -1,3 +1,5 @@
+import { JwtModule, JwtService } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   FastifyAdapter,
@@ -5,6 +7,8 @@ import {
 } from '@nestjs/platform-fastify';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
+import { ConfigurationModule } from '../../src/common/configuration/configuration.module';
+import { JwtStrategy } from '../../src/modules/auth/jwt.strategy';
 import { Provider, Sex } from '../../src/modules/characters/character.enum';
 import {
   LocationStateDto,
@@ -18,6 +22,8 @@ import { LocationsController } from '../../src/modules/locations/locations.contr
 import { LocationsService } from '../../src/modules/locations/locations.service';
 import { PlaceEntity } from '../../src/modules/locations/place.entity';
 import { PlaceDistributorService } from '../../src/modules/locations/placeDistributor.service';
+
+const TEST_JWT_SECRET = 'test-jwt-secret';
 
 const mockLocation: LocationEntity = {
   id: 'd4e5f6a7-b8c9-0123-defa-234567890123',
@@ -110,14 +116,27 @@ const mockPlaceDistributorService = {
 
 describe('LocationsController (e2e)', () => {
   let app: NestFastifyApplication;
+  let jwtService: JwtService;
+  let bearerToken: string;
+
+  beforeAll(() => {
+    process.env.JWT_SECRET = TEST_JWT_SECRET;
+    process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
+  });
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigurationModule,
+        PassportModule,
+        JwtModule.register({ secret: TEST_JWT_SECRET }),
+      ],
       controllers: [LocationsController],
       providers: [
         LocationsService,
+        JwtStrategy,
         {
           provide: getRepositoryToken(LocationEntity),
           useValue: mockLocationRepository,
@@ -146,6 +165,11 @@ describe('LocationsController (e2e)', () => {
     );
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
+
+    jwtService = moduleFixture.get(JwtService);
+    bearerToken = jwtService.sign({
+      sub: '11111111-2222-3333-4444-555555555555',
+    });
   });
 
   afterEach(async () => {
@@ -158,6 +182,7 @@ describe('LocationsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .get('/locations')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .expect(200)
         .expect((res) => {
           const body = res.body as LocationDto[];
@@ -174,6 +199,7 @@ describe('LocationsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .get('/locations')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .expect(200)
         .expect([]);
     });
@@ -199,6 +225,7 @@ describe('LocationsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .get(`/locations/${mockLocation.id}/state`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-user-time', userTime)
         .expect(200)
         .expect((res) => {
@@ -222,6 +249,7 @@ describe('LocationsController (e2e)', () => {
 
       await request(app.getHttpServer())
         .get(`/locations/${mockLocation.id}/state`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-user-time', userTime)
         .expect(200);
 
@@ -275,6 +303,7 @@ describe('LocationsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .get(`/locations/${mockLocation.id}/state`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-user-time', userTime)
         .expect(200)
         .expect((res) => {
@@ -297,6 +326,7 @@ describe('LocationsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .get(`/locations/${mockLocation.id}/state`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-user-time', userTime)
         .expect(200)
         .expect((res) => {
@@ -310,6 +340,7 @@ describe('LocationsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .get('/locations/00000000-0000-0000-0000-000000000000/state')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-user-time', userTime)
         .expect(404);
     });

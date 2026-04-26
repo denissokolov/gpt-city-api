@@ -1,6 +1,8 @@
 import type { ServerResponse } from 'node:http';
 
 import { NotFoundException, ValidationPipe } from '@nestjs/common';
+import { JwtModule, JwtService } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   FastifyAdapter,
@@ -8,6 +10,8 @@ import {
 } from '@nestjs/platform-fastify';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
+import { ConfigurationModule } from '../../src/common/configuration/configuration.module';
+import { JwtStrategy } from '../../src/modules/auth/jwt.strategy';
 import { AvatarFacade } from '../../src/modules/avatars/avatar.facade';
 import { CharacterFacade } from '../../src/modules/characters/character.facade';
 import { ChatActivity } from '../../src/modules/chats/chat.activity.enum';
@@ -29,6 +33,8 @@ jest.mock('ai', () => ({
   generateText: (...args: unknown[]) =>
     (mockGenerateText as (...args: unknown[]) => unknown)(...args),
 }));
+
+const TEST_JWT_SECRET = 'test-jwt-secret';
 
 const mockLocationId = 'd4e5f6a7-b8c9-0123-defa-234567890123';
 const mockStateId = 'e5f6a7b8-c9d0-4234-bfab-345678901234';
@@ -84,14 +90,27 @@ const mockPromptsService = {
 
 describe('ChatsController (e2e)', () => {
   let app: NestFastifyApplication;
+  let jwtService: JwtService;
+  let bearerToken: string;
+
+  beforeAll(() => {
+    process.env.JWT_SECRET = TEST_JWT_SECRET;
+    process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
+  });
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigurationModule,
+        PassportModule,
+        JwtModule.register({ secret: TEST_JWT_SECRET }),
+      ],
       controllers: [ChatsController],
       providers: [
         ChatsService,
+        JwtStrategy,
         {
           provide: getRepositoryToken(ChatEntity),
           useValue: mockChatRepository,
@@ -125,6 +144,11 @@ describe('ChatsController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
+
+    jwtService = moduleFixture.get(JwtService);
+    bearerToken = jwtService.sign({
+      sub: '11111111-2222-3333-4444-555555555555',
+    });
   });
 
   afterEach(async () => {
@@ -161,6 +185,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(201)
@@ -182,6 +207,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(404);
@@ -198,6 +224,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(404);
@@ -213,6 +240,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(404);
@@ -231,6 +259,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(404);
@@ -252,6 +281,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(400);
@@ -262,6 +292,7 @@ describe('ChatsController (e2e)', () => {
       delete (body as Partial<typeof validBody>).stateId;
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send(body)
         .expect(400);
@@ -270,6 +301,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when stateId is not a valid UUID', () => {
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send({ ...validBody, stateId: 'not-a-uuid' })
         .expect(400);
@@ -280,6 +312,7 @@ describe('ChatsController (e2e)', () => {
       delete (body as Partial<typeof validBody>).placeId;
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send(body)
         .expect(400);
@@ -288,6 +321,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when x-avatar-id header is missing', () => {
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .send(validBody)
         .expect(400);
     });
@@ -295,6 +329,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when x-avatar-id header is not a valid UUID', () => {
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', 'not-a-uuid')
         .send(validBody)
         .expect(400);
@@ -303,6 +338,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when characterIds is empty', () => {
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send({ ...validBody, characterIds: [] })
         .expect(400);
@@ -311,6 +347,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when characterIds contains invalid UUIDs', () => {
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send({ ...validBody, characterIds: ['not-a-uuid'] })
         .expect(400);
@@ -319,6 +356,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when placeId is not a valid UUID', () => {
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send({ ...validBody, placeId: 'not-a-uuid' })
         .expect(400);
@@ -327,6 +365,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when body is empty', () => {
       return request(app.getHttpServer())
         .post('/chats')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send({})
         .expect(400);
@@ -402,6 +441,7 @@ describe('ChatsController (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ message: 'Hello' })
@@ -419,6 +459,7 @@ describe('ChatsController (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ message: 'Hello' })
@@ -457,6 +498,7 @@ describe('ChatsController (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ activity: ChatActivity.Silence })
@@ -498,6 +540,7 @@ describe('ChatsController (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ message: 'Hi', activity: ChatActivity.Silence })
@@ -523,6 +566,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when neither message nor activity is provided', () => {
       return request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({})
@@ -532,6 +576,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when activity is not a known enum value', () => {
       return request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ activity: 'unknown-activity' })
@@ -541,6 +586,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when message is sent as an empty string alongside activity', () => {
       return request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ message: '', activity: ChatActivity.Silence })
@@ -550,6 +596,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when x-locale is missing', () => {
       return request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', validAvatarId)
         .send({ activity: ChatActivity.Silence })
         .expect(400);

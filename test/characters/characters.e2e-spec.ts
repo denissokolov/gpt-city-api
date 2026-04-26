@@ -3,13 +3,19 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import { JwtModule, JwtService } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
+import { ConfigurationModule } from '../../src/common/configuration/configuration.module';
+import { JwtStrategy } from '../../src/modules/auth/jwt.strategy';
 import { CharacterDto } from '../../src/modules/characters/character.dto';
 import { CharacterEntity } from '../../src/modules/characters/character.entity';
 import { Provider, Sex } from '../../src/modules/characters/character.enum';
 import { CharactersController } from '../../src/modules/characters/characters.controller';
 import { CharactersService } from '../../src/modules/characters/characters.service';
+
+const TEST_JWT_SECRET = 'test-jwt-secret';
 
 const mockCharacter: CharacterEntity = {
   id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
@@ -40,14 +46,27 @@ const mockRepository = {
 
 describe('CharactersController (e2e)', () => {
   let app: NestFastifyApplication;
+  let jwtService: JwtService;
+  let bearerToken: string;
+
+  beforeAll(() => {
+    process.env.JWT_SECRET = TEST_JWT_SECRET;
+    process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
+  });
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigurationModule,
+        PassportModule,
+        JwtModule.register({ secret: TEST_JWT_SECRET }),
+      ],
       controllers: [CharactersController],
       providers: [
         CharactersService,
+        JwtStrategy,
         {
           provide: getRepositoryToken(CharacterEntity),
           useValue: mockRepository,
@@ -60,6 +79,11 @@ describe('CharactersController (e2e)', () => {
     );
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
+
+    jwtService = moduleFixture.get(JwtService);
+    bearerToken = jwtService.sign({
+      sub: '11111111-2222-3333-4444-555555555555',
+    });
   });
 
   afterEach(async () => {
@@ -72,6 +96,7 @@ describe('CharactersController (e2e)', () => {
 
       return request(app.getHttpServer())
         .get('/characters')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .expect(200)
         .expect((res) => {
           const body = res.body as CharacterDto[];
@@ -89,6 +114,7 @@ describe('CharactersController (e2e)', () => {
 
       return request(app.getHttpServer())
         .get('/characters')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .expect(200)
         .expect([]);
     });

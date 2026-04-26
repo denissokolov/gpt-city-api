@@ -236,6 +236,7 @@ describe('AvatarsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .get('/avatars/current')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', mockAvatar.id)
         .expect(200)
         .expect((res) => {
@@ -255,17 +256,22 @@ describe('AvatarsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .get('/avatars/current')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', mockAvatar.id)
         .expect(404);
     });
 
     it('should return 400 when x-avatar-id header is missing', () => {
-      return request(app.getHttpServer()).get('/avatars/current').expect(400);
+      return request(app.getHttpServer())
+        .get('/avatars/current')
+        .set('Authorization', `Bearer ${bearerToken}`)
+        .expect(400);
     });
 
     it('should return 400 when x-avatar-id header is not a UUID', () => {
       return request(app.getHttpServer())
         .get('/avatars/current')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .set('x-avatar-id', 'not-a-uuid')
         .expect(400);
     });
@@ -284,6 +290,7 @@ describe('AvatarsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .patch(`/avatars/${mockAvatar.id}`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .send(updateBody)
         .expect(200)
         .expect((res) => {
@@ -299,6 +306,7 @@ describe('AvatarsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .patch(`/avatars/${mockAvatar.id}`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .send(updateBody)
         .expect(404);
     });
@@ -306,6 +314,7 @@ describe('AvatarsController (e2e)', () => {
     it('should return 400 when id is not a UUID', () => {
       return request(app.getHttpServer())
         .patch('/avatars/not-a-uuid')
+        .set('Authorization', `Bearer ${bearerToken}`)
         .send(updateBody)
         .expect(400);
     });
@@ -313,6 +322,7 @@ describe('AvatarsController (e2e)', () => {
     it('should return 400 when age is negative', () => {
       return request(app.getHttpServer())
         .patch(`/avatars/${mockAvatar.id}`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .send({ age: -1 })
         .expect(400);
     });
@@ -320,6 +330,7 @@ describe('AvatarsController (e2e)', () => {
     it('should return 400 when sex is not a valid enum value', () => {
       return request(app.getHttpServer())
         .patch(`/avatars/${mockAvatar.id}`)
+        .set('Authorization', `Bearer ${bearerToken}`)
         .send({ sex: 'not-a-sex' })
         .expect(400);
     });
