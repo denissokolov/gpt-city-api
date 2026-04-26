@@ -8,6 +8,7 @@ import {
 } from '@nestjs/platform-fastify';
 import request from 'supertest';
 import { ConfigurationModule } from '../../src/common/configuration/configuration.module';
+import { REFRESH_JWT_TYP } from '../../src/modules/auth/auth.constants';
 import { AuthController } from '../../src/modules/auth/auth.controller';
 import { AuthService } from '../../src/modules/auth/auth.service';
 import { JwtStrategy } from '../../src/modules/auth/jwt.strategy';
@@ -23,6 +24,8 @@ const mockUser: AuthUserDto = {
 
 const mockAuthService = {
   authenticateWithGoogle: jest.fn(),
+  refreshWithToken: jest.fn(),
+  logout: jest.fn(),
   getAuthenticatedUser: jest.fn(),
 };
 
@@ -69,8 +72,11 @@ describe('AuthController (e2e)', () => {
   });
 
   describe('POST /auth/google', () => {
-    it('should return an access token for a valid Google ID token', async () => {
-      mockAuthService.authenticateWithGoogle.mockResolvedValue('app.jwt.token');
+    it('should return access and refresh tokens for a valid Google ID token', async () => {
+      mockAuthService.authenticateWithGoogle.mockResolvedValue({
+        accessToken: 'app.access.token',
+        refreshToken: 'app.refresh.token',
+      });
 
       return request(app.getHttpServer())
         .post('/auth/google')
@@ -78,7 +84,8 @@ describe('AuthController (e2e)', () => {
         .expect(200)
         .expect((res) => {
           const body = res.body as AuthTokenDto;
-          expect(body.accessToken).toBe('app.jwt.token');
+          expect(body.accessToken).toBe('app.access.token');
+          expect(body.refreshToken).toBe('app.refresh.token');
         });
     });
 
@@ -98,6 +105,60 @@ describe('AuthController (e2e)', () => {
         .post('/auth/google')
         .send({ idToken: 'bad-token' })
         .expect(401);
+    });
+  });
+
+  describe('POST /auth/refresh', () => {
+    it('should return new tokens for a valid refresh token', async () => {
+      mockAuthService.refreshWithToken.mockResolvedValue({
+        accessToken: 'new.access',
+        refreshToken: 'new.refresh',
+      });
+
+      return request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({ refreshToken: 'valid.refresh' })
+        .expect(200)
+        .expect((res) => {
+          const body = res.body as AuthTokenDto;
+          expect(body.accessToken).toBe('new.access');
+          expect(body.refreshToken).toBe('new.refresh');
+        });
+    });
+
+    it('should return 400 when refreshToken is missing', () => {
+      return request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({})
+        .expect(400);
+    });
+
+    it('should return 401 when the refresh token is invalid', async () => {
+      mockAuthService.refreshWithToken.mockRejectedValue(
+        new UnauthorizedException('Invalid or expired refresh token'),
+      );
+
+      return request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({ refreshToken: 'bad' })
+        .expect(401);
+    });
+  });
+
+  describe('POST /auth/logout', () => {
+    it('should return 204 when logout succeeds with a refresh token', async () => {
+      mockAuthService.logout.mockImplementation(() => undefined);
+
+      return request(app.getHttpServer())
+        .post('/auth/logout')
+        .send({ refreshToken: 'rt' })
+        .expect(204);
+    });
+
+    it('should return 204 with an empty body', async () => {
+      mockAuthService.logout.mockImplementation(() => undefined);
+
+      return request(app.getHttpServer()).post('/auth/logout').expect(204);
     });
   });
 
@@ -127,6 +188,18 @@ describe('AuthController (e2e)', () => {
       return request(app.getHttpServer())
         .get('/auth/me')
         .set('Authorization', 'Bearer not.a.valid.token')
+        .expect(401);
+    });
+
+    it('should return 401 when the Bearer token is a refresh token', () => {
+      const refreshLike = jwtService.sign(
+        { sub: mockUser.id, typ: REFRESH_JWT_TYP, jti: 'e2e-jti' },
+        { expiresIn: '30d' },
+      );
+
+      return request(app.getHttpServer())
+        .get('/auth/me')
+        .set('Authorization', `Bearer ${refreshLike}`)
         .expect(401);
     });
   });

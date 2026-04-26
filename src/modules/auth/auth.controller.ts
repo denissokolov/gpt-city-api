@@ -9,12 +9,19 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { AuthTokenDto, AuthUserDto, GoogleAuthDto } from './auth.dto';
+import {
+  AuthTokenDto,
+  AuthUserDto,
+  GoogleAuthDto,
+  LogoutAuthDto,
+  RefreshAuthDto,
+} from './auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from './auth.service';
@@ -31,18 +38,46 @@ export class AuthController {
     description:
       'Verifies a Google ID token obtained on the client via Google Sign-In. ' +
       'Creates a new user account on first login or updates an existing one. ' +
-      'Returns a signed JWT to use as a Bearer token for all authenticated endpoints.',
+      'Returns an access JWT for Authorization: Bearer headers and a refresh token for POST /auth/refresh.',
   })
   @ApiResponse({ status: 200, type: AuthTokenDto })
   @ApiResponse({
     status: 401,
     description: 'Invalid or expired Google ID token',
   })
-  async googleAuth(@Body() dto: GoogleAuthDto): Promise<AuthTokenDto> {
-    const accessToken = await this.authService.authenticateWithGoogle(
-      dto.idToken,
-    );
-    return { accessToken };
+  googleAuth(@Body() dto: GoogleAuthDto): Promise<AuthTokenDto> {
+    return this.authService.authenticateWithGoogle(dto.idToken);
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Issue a new access token using a refresh token',
+    description:
+      'Exchanges a valid refresh token for a new access token and a new refresh token (rotation). ' +
+      'Does not contact Google. The previous refresh token is invalidated after a successful refresh.',
+  })
+  @ApiResponse({ status: 200, type: AuthTokenDto })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid, expired, or revoked refresh token',
+  })
+  refresh(@Body() dto: RefreshAuthDto): Promise<AuthTokenDto> {
+    return this.authService.refreshWithToken(dto.refreshToken);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBody({ type: LogoutAuthDto, required: false })
+  @ApiOperation({
+    summary: 'Invalidate the server-side refresh session',
+    description:
+      'When a refresh token is supplied, its identifier is revoked so it can no longer be used with POST /auth/refresh. ' +
+      'Access JWTs are not stored on the server and remain valid until they expire; clients should discard all tokens locally.',
+  })
+  @ApiResponse({ status: 204, description: 'Logout accepted' })
+  async logout(@Body() dto?: LogoutAuthDto): Promise<void> {
+    await this.authService.logout(dto?.refreshToken);
   }
 
   @Get('me')

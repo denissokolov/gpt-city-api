@@ -41,6 +41,10 @@ export class ConfigurationService {
     return this.requireEnv('GOOGLE_CLIENT_ID');
   }
 
+  getRedisUrl(): string {
+    return this.requireEnv('REDIS_URL');
+  }
+
   getDatabaseConfig(): TypeOrmModuleOptions {
     return {
       type: 'postgres',

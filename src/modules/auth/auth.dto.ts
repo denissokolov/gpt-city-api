@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class GoogleAuthDto {
   @ApiProperty({
@@ -17,6 +17,37 @@ export class AuthTokenDto {
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   accessToken: string;
+
+  @ApiProperty({
+    description:
+      'Long-lived refresh token. Send it to POST /auth/refresh to obtain a new access token without signing in with Google again. Treat it like a password: store securely and revoke via POST /auth/logout when the user signs out.',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  })
+  refreshToken: string;
+}
+
+export class RefreshAuthDto {
+  @ApiProperty({
+    description:
+      'Refresh token previously returned from POST /auth/google or POST /auth/refresh',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  })
+  @IsString()
+  @IsNotEmpty()
+  refreshToken: string;
+}
+
+export class LogoutAuthDto {
+  @ApiProperty({
+    description:
+      'When provided, the server records this refresh token as revoked so it can no longer be used at POST /auth/refresh. Omit the field if the client only discards tokens locally.',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  refreshToken?: string;
 }
 
 export class AuthUserDto {

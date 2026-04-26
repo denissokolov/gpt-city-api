@@ -22,6 +22,8 @@ describe('AuthController', () => {
           provide: AuthService,
           useValue: {
             authenticateWithGoogle: jest.fn(),
+            refreshWithToken: jest.fn(),
+            logout: jest.fn(),
             getAuthenticatedUser: jest.fn(),
           },
         },
@@ -33,14 +35,20 @@ describe('AuthController', () => {
   });
 
   describe('googleAuth', () => {
-    it('should return an access token on valid Google ID token', async () => {
-      service.authenticateWithGoogle.mockResolvedValue('signed.jwt.token');
+    it('should return access and refresh tokens on valid Google ID token', async () => {
+      service.authenticateWithGoogle.mockResolvedValue({
+        accessToken: 'access.jwt',
+        refreshToken: 'refresh.jwt',
+      });
 
       const result = await controller.googleAuth({
         idToken: 'google-id-token',
       });
 
-      expect(result).toEqual({ accessToken: 'signed.jwt.token' });
+      expect(result).toEqual({
+        accessToken: 'access.jwt',
+        refreshToken: 'refresh.jwt',
+      });
       expect(service.authenticateWithGoogle).toHaveBeenCalledWith(
         'google-id-token',
       );
@@ -54,6 +62,41 @@ describe('AuthController', () => {
       await expect(
         controller.googleAuth({ idToken: 'bad-token' }),
       ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('refresh', () => {
+    it('should return new tokens from refreshWithToken', async () => {
+      service.refreshWithToken.mockResolvedValue({
+        accessToken: 'new.access',
+        refreshToken: 'new.refresh',
+      });
+
+      const result = await controller.refresh({
+        refreshToken: 'old.refresh',
+      });
+
+      expect(result).toEqual({
+        accessToken: 'new.access',
+        refreshToken: 'new.refresh',
+      });
+      expect(service.refreshWithToken).toHaveBeenCalledWith('old.refresh');
+    });
+  });
+
+  describe('logout', () => {
+    it('should call logout with refresh token', async () => {
+      service.logout.mockResolvedValue(undefined);
+      await controller.logout({ refreshToken: 'rt' });
+
+      expect(service.logout).toHaveBeenCalledWith('rt');
+    });
+
+    it('should call logout with undefined when body omits refresh token', async () => {
+      service.logout.mockResolvedValue(undefined);
+      await controller.logout({});
+
+      expect(service.logout).toHaveBeenCalledWith(undefined);
     });
   });
 

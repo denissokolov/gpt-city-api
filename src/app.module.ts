@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { McpModule } from '@rekog/mcp-nest';
 import { ConfigurationModule } from './common/configuration/configuration.module';
 import { DatabaseModule } from './common/database/database.module';
+import { RedisModule } from './common/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AvatarsModule } from './modules/avatars/avatars.module';
 import { AvatarsTool } from './modules/avatars/avatars.tool';
@@ -18,6 +19,7 @@ import { UsersModule } from './modules/users/users.module';
   imports: [
     ConfigurationModule,
     DatabaseModule,
+    RedisModule,
     HealthModule,
     UsersModule,
     AuthModule,

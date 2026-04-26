@@ -35,6 +35,7 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
 
+  app.enableShutdownHooks();
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   // Attach the x-avatar-id header to the active OpenTelemetry span as `avatar.id`
