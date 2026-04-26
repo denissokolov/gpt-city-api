@@ -55,7 +55,8 @@ export class SystemChatToolsService {
         },
       }),
       create_character: tool({
-        description: 'Create a new character in the city',
+        description:
+          "Create a new character in the city. Don't write systemInstructions if not asked by user.",
         inputSchema: createCharacterParams,
         execute: async (args) => {
           const character = await this.characterFacade.create(args);
