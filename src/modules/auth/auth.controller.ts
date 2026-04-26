@@ -16,7 +16,7 @@ import {
 import { AuthService } from './auth.service';
 import { AuthTokenDto, AuthUserDto, GoogleAuthDto } from './auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { CurrentUser } from './current-user.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from './auth.service';
 
 @ApiTags('auth')

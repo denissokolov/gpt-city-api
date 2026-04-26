@@ -10,7 +10,13 @@ export class SystemChatDto {
   id: string;
 
   @ApiProperty({
-    description: 'ID of the avatar who owns the system chat',
+    description: 'ID of the user who owns the system chat',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  userId: string;
+
+  @ApiProperty({
+    description: 'ID of the avatar associated with this system chat',
     example: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
   })
   avatarId: string;
@@ -50,7 +56,13 @@ export class SystemMessageDto {
   systemChatId: string;
 
   @ApiProperty({
-    description: 'ID of the avatar who owns the chat this message belongs to',
+    description: 'ID of the user who owns the chat this message belongs to',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  userId: string;
+
+  @ApiProperty({
+    description: 'ID of the avatar associated with the message',
     example: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
   })
   avatarId: string;

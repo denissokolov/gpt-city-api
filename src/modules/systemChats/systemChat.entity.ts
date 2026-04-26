@@ -7,17 +7,20 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { AvatarEntity } from '../avatars/avatar.entity';
+import { UserEntity } from '../users/user.entity';
 
 @Entity('system_chats')
 export class SystemChatEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => AvatarEntity, { onDelete: 'CASCADE' })
-  avatar: AvatarEntity;
+  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  user: UserEntity;
 
   @Index()
+  @Column('uuid')
+  userId: string;
+
   @Column('uuid')
   avatarId: string;
 
@@ -33,8 +36,8 @@ export class SystemChatEntity {
 
 export type CreateSystemChatEntityInput = Omit<
   SystemChatEntity,
-  'id' | 'avatar' | 'createdAt' | 'updatedAt'
+  'id' | 'user' | 'createdAt' | 'updatedAt'
 >;
 export type UpdateSystemChatEntityInput = Partial<
-  Omit<SystemChatEntity, 'avatar' | 'createdAt' | 'updatedAt'>
+  Omit<SystemChatEntity, 'user' | 'createdAt' | 'updatedAt'>
 > & { id: string };

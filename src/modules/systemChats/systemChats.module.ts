@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { PromptsModule } from '../../common/prompts/prompts.module';
+import { AuthModule } from '../auth/auth.module';
 import { AvatarsModule } from '../avatars/avatars.module';
 import { CharactersModule } from '../characters/characters.module';
 import { ChatsModule } from '../chats/chats.module';
@@ -15,6 +16,7 @@ import { SystemMessageEntity } from './systemMessage.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([SystemChatEntity, SystemMessageEntity]),
+    AuthModule,
     AvatarsModule,
     CharactersModule,
     ChatsModule,

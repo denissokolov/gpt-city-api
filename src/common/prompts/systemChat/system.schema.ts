@@ -6,6 +6,7 @@ export default z.object({
     firstName: z.string(),
     lastName: z.string(),
     title: z.string(),
+    userId: z.string(),
   }),
   locale: z.string(),
 });

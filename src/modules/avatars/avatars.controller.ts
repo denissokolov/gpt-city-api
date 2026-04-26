@@ -20,7 +20,7 @@ import {
   AvatarIdHeader,
 } from '../../common/decorators/avatarIdHeader.decorator';
 import type { JwtPayload } from '../auth/auth.service';
-import { CurrentUser } from '../auth/current-user.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AvatarDto, CreateAvatarDto, UpdateAvatarDto } from './avatar.dto';
 import { AvatarsService } from './avatars.service';
