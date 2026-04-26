@@ -28,6 +28,8 @@ import { ChatsService } from './chats.service';
 @ApiLocaleHeader()
 @Controller('chats')
 export class ChatsController {
+  private readonly SILENCE_IDLE_MS = 30000;
+
   constructor(private readonly chatsService: ChatsService) {}
 
   @Post()
@@ -35,11 +37,19 @@ export class ChatsController {
   @ApiResponse({ status: 201, type: ChatDto })
   @ApiResponse({ status: 400, description: 'Invalid request body' })
   @ApiResponse({ status: 401, description: 'Missing or invalid JWT' })
-  create(
+  async create(
     @AvatarIdHeader() avatarId: string,
     @Body() dto: CreateChatDto,
   ): Promise<ChatDto> {
-    return this.chatsService.create({ ...dto, avatarId, summary: null });
+    const chat = await this.chatsService.create({
+      ...dto,
+      avatarId,
+      summary: null,
+    });
+    return {
+      ...chat,
+      silenceIdleMs: this.SILENCE_IDLE_MS,
+    };
   }
 
   @Post(':id/message')

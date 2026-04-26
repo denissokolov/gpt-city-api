@@ -49,6 +49,13 @@ export class ChatDto {
     nullable: true,
   })
   summary: string | null;
+
+  @ApiProperty({
+    description: 'Setting for sending silence activity',
+    example: 30000,
+    nullable: true,
+  })
+  silenceIdleMs: number | null;
 }
 
 export class CreateChatDto {
