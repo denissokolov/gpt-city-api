@@ -21,6 +21,8 @@ interface RefreshJwtPayload {
 
 export interface AuthTokens {
   accessToken: string;
+  /** Unix timestamp in seconds (UTC) when the access JWT expires; same as the JWT `exp` claim. */
+  accessTokenExpiresAt: number;
   refreshToken: string;
 }
 
@@ -130,8 +132,10 @@ export class AuthService {
   }
 
   private issueTokenPair(user: UserEntity): AuthTokens {
+    const accessToken = this.signAccessJwt(user);
     return {
-      accessToken: this.signAccessJwt(user),
+      accessToken,
+      accessTokenExpiresAt: this.readAccessJwtExp(accessToken),
       refreshToken: this.signRefreshJwt(user),
     };
   }
@@ -139,6 +143,27 @@ export class AuthService {
   private signAccessJwt(user: UserEntity): string {
     const payload: JwtPayload = { sub: user.id };
     return this.jwtService.sign(payload);
+  }
+
+  private readAccessJwtExp(accessToken: string): number {
+    const decoded: unknown = this.jwtService.decode(accessToken);
+    if (typeof decoded !== 'object' || decoded === null) {
+      throw new Error(
+        'Access JWT is missing exp; check JwtModule signOptions.expiresIn',
+      );
+    }
+    if (!('exp' in decoded)) {
+      throw new Error(
+        'Access JWT is missing exp; check JwtModule signOptions.expiresIn',
+      );
+    }
+    const exp = (decoded as { exp: unknown }).exp;
+    if (typeof exp !== 'number') {
+      throw new Error(
+        'Access JWT is missing exp; check JwtModule signOptions.expiresIn',
+      );
+    }
+    return exp;
   }
 
   private signRefreshJwt(user: UserEntity): string {

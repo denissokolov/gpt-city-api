@@ -7,7 +7,7 @@ Authentication via Google Sign-In.
 2. The client sends \`POST /auth/google\` with the ID token.
 3. The server verifies the token with Google, creates or updates the user record, and returns an **access JWT** and a **refresh token**.
 4. The client includes the access JWT as \`Authorization: Bearer <token>\` on protected endpoints.
-5. Before the access token expires, the client can call \`POST /auth/refresh\` with the refresh token to obtain a new pair without Google.
+5. **Proactive refresh:** responses include \`accessTokenExpiresAt\` (Unix seconds, same as the access JWT \`exp\`). Schedule \`POST /auth/refresh\` slightly before that instant so requests rarely hit expiry. **Reactive fallback:** on **401** from a protected call, refresh with the stored refresh token and retry.
 6. On sign-out, the client calls \`POST /auth/logout\` with the refresh token (optional but recommended) and clears stored tokens locally.
 
 ## Endpoints

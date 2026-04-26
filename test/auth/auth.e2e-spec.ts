@@ -75,6 +75,7 @@ describe('AuthController (e2e)', () => {
     it('should return access and refresh tokens for a valid Google ID token', async () => {
       mockAuthService.authenticateWithGoogle.mockResolvedValue({
         accessToken: 'app.access.token',
+        accessTokenExpiresAt: 1735689600,
         refreshToken: 'app.refresh.token',
       });
 
@@ -85,6 +86,7 @@ describe('AuthController (e2e)', () => {
         .expect((res) => {
           const body = res.body as AuthTokenDto;
           expect(body.accessToken).toBe('app.access.token');
+          expect(body.accessTokenExpiresAt).toBe(1735689600);
           expect(body.refreshToken).toBe('app.refresh.token');
         });
     });
@@ -112,6 +114,7 @@ describe('AuthController (e2e)', () => {
     it('should return new tokens for a valid refresh token', async () => {
       mockAuthService.refreshWithToken.mockResolvedValue({
         accessToken: 'new.access',
+        accessTokenExpiresAt: 1735776000,
         refreshToken: 'new.refresh',
       });
 
@@ -122,6 +125,7 @@ describe('AuthController (e2e)', () => {
         .expect((res) => {
           const body = res.body as AuthTokenDto;
           expect(body.accessToken).toBe('new.access');
+          expect(body.accessTokenExpiresAt).toBe(1735776000);
           expect(body.refreshToken).toBe('new.refresh');
         });
     });

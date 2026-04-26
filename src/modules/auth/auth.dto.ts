@@ -20,6 +20,13 @@ export class AuthTokenDto {
 
   @ApiProperty({
     description:
+      'Unix timestamp in seconds (UTC) when the access token expires — identical to the access JWT `exp` claim. Use for proactive refresh timers without decoding the JWT on the client.',
+    example: 1735689600,
+  })
+  accessTokenExpiresAt: number;
+
+  @ApiProperty({
+    description:
       'Long-lived refresh token. Send it to POST /auth/refresh to obtain a new access token without signing in with Google again. Treat it like a password: store securely and revoke via POST /auth/logout when the user signs out.',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })

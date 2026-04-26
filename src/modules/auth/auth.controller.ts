@@ -38,7 +38,7 @@ export class AuthController {
     description:
       'Verifies a Google ID token obtained on the client via Google Sign-In. ' +
       'Creates a new user account on first login or updates an existing one. ' +
-      'Returns an access JWT for Authorization: Bearer headers and a refresh token for POST /auth/refresh.',
+      'Returns an access JWT for Authorization: Bearer headers, accessTokenExpiresAt for proactive refresh, and a refresh token for POST /auth/refresh.',
   })
   @ApiResponse({ status: 200, type: AuthTokenDto })
   @ApiResponse({
@@ -54,8 +54,8 @@ export class AuthController {
   @ApiOperation({
     summary: 'Issue a new access token using a refresh token',
     description:
-      'Exchanges a valid refresh token for a new access token and a new refresh token (rotation). ' +
-      'Does not contact Google. The previous refresh token is invalidated after a successful refresh.',
+      'Exchanges a valid refresh token for a new access token, accessTokenExpiresAt, and a new refresh token (rotation). ' +
+      'The previous refresh token is invalidated after a successful refresh.',
   })
   @ApiResponse({ status: 200, type: AuthTokenDto })
   @ApiResponse({

@@ -38,6 +38,7 @@ describe('AuthController', () => {
     it('should return access and refresh tokens on valid Google ID token', async () => {
       service.authenticateWithGoogle.mockResolvedValue({
         accessToken: 'access.jwt',
+        accessTokenExpiresAt: 1735689600,
         refreshToken: 'refresh.jwt',
       });
 
@@ -47,6 +48,7 @@ describe('AuthController', () => {
 
       expect(result).toEqual({
         accessToken: 'access.jwt',
+        accessTokenExpiresAt: 1735689600,
         refreshToken: 'refresh.jwt',
       });
       expect(service.authenticateWithGoogle).toHaveBeenCalledWith(
@@ -69,6 +71,7 @@ describe('AuthController', () => {
     it('should return new tokens from refreshWithToken', async () => {
       service.refreshWithToken.mockResolvedValue({
         accessToken: 'new.access',
+        accessTokenExpiresAt: 1735776000,
         refreshToken: 'new.refresh',
       });
 
@@ -78,6 +81,7 @@ describe('AuthController', () => {
 
       expect(result).toEqual({
         accessToken: 'new.access',
+        accessTokenExpiresAt: 1735776000,
         refreshToken: 'new.refresh',
       });
       expect(service.refreshWithToken).toHaveBeenCalledWith('old.refresh');
