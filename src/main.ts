@@ -14,6 +14,8 @@ import { AppModule } from './app.module';
 import { ConfigurationService } from './common/configuration/configuration.service';
 import { AVATAR_ID_HEADER } from './common/decorators/avatarIdHeader.decorator';
 import { mcpTagDescription } from './mcp.tag';
+import { AuthModule } from './modules/auth/auth.module';
+import { authTagDescription } from './modules/auth/auth.tag';
 import { AvatarsModule } from './modules/avatars/avatars.module';
 import { avatarsTagDescription } from './modules/avatars/avatars.tag';
 import { CharactersModule } from './modules/characters/characters.module';
@@ -64,16 +66,19 @@ async function bootstrap() {
     )
     .setVersion(configService.getServerVersion())
     .addTag('health', healthTagDescription)
+    .addTag('auth', authTagDescription)
     .addTag('avatars', avatarsTagDescription)
     .addTag('characters', charactersTagDescription)
     .addTag('locations', locationsTagDescription)
     .addTag('chats', chatsTagDescription)
     .addTag('system-chats', systemChatsTagDescription)
     .addTag('mcp', mcpTagDescription)
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config, {
     include: [
       HealthModule,
+      AuthModule,
       AvatarsModule,
       CharactersModule,
       ChatsModule,

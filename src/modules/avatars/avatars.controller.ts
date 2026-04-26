@@ -6,12 +6,22 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   ApiAvatarIdHeader,
   AvatarIdHeader,
 } from '../../common/decorators/avatarIdHeader.decorator';
+import type { JwtPayload } from '../auth/auth.service';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AvatarDto, CreateAvatarDto, UpdateAvatarDto } from './avatar.dto';
 import { AvatarsService } from './avatars.service';
 
@@ -21,11 +31,29 @@ export class AvatarsController {
   constructor(private readonly avatarsService: AvatarsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new avatar' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Create a new avatar owned by the authenticated user',
+  })
   @ApiResponse({ status: 201, type: AvatarDto })
   @ApiResponse({ status: 400, description: 'Invalid request body' })
-  create(@Body() dto: CreateAvatarDto): Promise<AvatarDto> {
-    return this.avatarsService.create(dto);
+  @ApiResponse({ status: 401, description: 'Missing or invalid JWT' })
+  create(
+    @Body() dto: CreateAvatarDto,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<AvatarDto> {
+    return this.avatarsService.create({ ...dto, userId: user.sub });
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "List the authenticated user's avatars" })
+  @ApiResponse({ status: 200, type: [AvatarDto] })
+  @ApiResponse({ status: 401, description: 'Missing or invalid JWT' })
+  findMine(@CurrentUser() user: JwtPayload): Promise<AvatarDto[]> {
+    return this.avatarsService.findAllByUserId(user.sub);
   }
 
   @Get('current')

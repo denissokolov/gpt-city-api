@@ -33,6 +33,14 @@ export class ConfigurationService {
     return origins.length === 1 ? origins[0] : origins;
   }
 
+  getJwtSecret(): string {
+    return this.requireEnv('JWT_SECRET');
+  }
+
+  getGoogleClientId(): string {
+    return this.requireEnv('GOOGLE_CLIENT_ID');
+  }
+
   getDatabaseConfig(): TypeOrmModuleOptions {
     return {
       type: 'postgres',

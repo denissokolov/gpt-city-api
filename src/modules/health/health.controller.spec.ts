@@ -14,7 +14,7 @@ describe('HealthController', () => {
         HealthService,
         {
           provide: ConfigurationService,
-          useValue: { getServerVersion: () => '0.0.1' },
+          useValue: { getServerVersion: () => '0.0.3' },
         },
         {
           provide: DataSource,
@@ -30,7 +30,7 @@ describe('HealthController', () => {
     it('should return status ok with version and time', async () => {
       const result = await healthController.check();
       expect(result.status).toBe('ok');
-      expect(result.version).toBe('0.0.1');
+      expect(result.version).toBe('0.0.3');
       expect(result.database).toBe('ok');
       expect(new Date(result.time).toISOString()).toBe(result.time);
     });

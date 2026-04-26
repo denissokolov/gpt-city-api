@@ -7,6 +7,6 @@ if (process.env.LOGFIRE_WRITE_TOKEN) {
     environment: process.env.APP_ENV,
     token: process.env.LOGFIRE_WRITE_TOKEN,
     serviceName: 'gpt-city',
-    serviceVersion: '0.0.1',
+    serviceVersion: '0.0.3',
   });
 }

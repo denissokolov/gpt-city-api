@@ -2,15 +2,25 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { UserEntity } from '../users/user.entity';
 import { Sex } from './avatar.enum';
 
 @Entity('avatars')
 export class AvatarEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  user: UserEntity;
+
+  @Index()
+  @Column('uuid')
+  userId: string;
 
   @Column({ length: 255 })
   firstName: string;
@@ -39,8 +49,8 @@ export class AvatarEntity {
 
 export type CreateAvatarEntityInput = Omit<
   AvatarEntity,
-  'id' | 'createdAt' | 'updatedAt'
+  'id' | 'user' | 'createdAt' | 'updatedAt'
 >;
 export type UpdateAvatarEntityInput = Partial<
-  Omit<AvatarEntity, 'createdAt' | 'updatedAt'>
+  Omit<AvatarEntity, 'user' | 'userId' | 'createdAt' | 'updatedAt'>
 > & { id: string };

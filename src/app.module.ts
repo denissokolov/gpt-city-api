@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { McpModule } from '@rekog/mcp-nest';
 import { ConfigurationModule } from './common/configuration/configuration.module';
 import { DatabaseModule } from './common/database/database.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { AvatarsModule } from './modules/avatars/avatars.module';
 import { AvatarsTool } from './modules/avatars/avatars.tool';
 import { CharactersModule } from './modules/characters/characters.module';
@@ -11,12 +12,15 @@ import { HealthModule } from './modules/health/health.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { LocationsTool } from './modules/locations/locations.tool';
 import { SystemChatsModule } from './modules/systemChats/systemChats.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
     ConfigurationModule,
     DatabaseModule,
     HealthModule,
+    UsersModule,
+    AuthModule,
     AvatarsModule,
     CharactersModule,
     ChatsModule,
@@ -24,7 +28,7 @@ import { SystemChatsModule } from './modules/systemChats/systemChats.module';
     SystemChatsModule,
     McpModule.forRoot({
       name: 'gpt-city',
-      version: '0.0.1',
+      version: '0.0.3',
       instructions:
         'GPT City is a game where a city is inhabited by AI agents. ' +
         'Use the available tools to manage the game: create characters, ' +

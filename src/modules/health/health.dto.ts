@@ -4,7 +4,7 @@ export class HealthResponseDto {
   @ApiProperty({ description: 'Server status', example: 'ok' })
   status: string;
 
-  @ApiProperty({ description: 'Server version', example: '0.0.1' })
+  @ApiProperty({ description: 'Server version', example: '0.0.3' })
   version: string;
 
   @ApiProperty({
