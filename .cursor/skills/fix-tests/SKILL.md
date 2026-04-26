@@ -10,6 +10,12 @@ description: Fix failing Jest unit and e2e tests in a NestJS project. Use when t
 1. Run the failing suite to read the full error output.
 2. Identify the root cause from the categories below.
 3. Apply the fix, then re-run to confirm green.
+4. Always run **both** unit and e2e tests — fix all failures before finishing.
+
+## Rules
+
+- **Only change test files.** Never modify production code to make a test pass.
+- If it is unclear whether the test or the production code is wrong, ask before making any change.
 
 ## Commands
 

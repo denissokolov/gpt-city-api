@@ -107,6 +107,7 @@ describe('LocationsService', () => {
                   id: entity.id ?? 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
                 }) as LocationStateEntity,
             ),
+            findOne: jest.fn(),
             findOneBy: jest.fn(),
           },
         },

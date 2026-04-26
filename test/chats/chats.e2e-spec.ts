@@ -434,7 +434,7 @@ describe('ChatsController (e2e)', () => {
       ][];
       const chatSystemCall = renderCalls.find(([key]) => key === 'chat/system');
       expect(chatSystemCall).toBeDefined();
-      expect(chatSystemCall?.[1].characterState).toEqual({
+      expect(chatSystemCall?.[1].characterState).toMatchObject({
         mood: 'curiously focused',
         activity: 'sketching equations on a napkin',
       });

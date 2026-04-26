@@ -91,6 +91,7 @@ const mockLocationStateRepository = {
     (entity: Partial<LocationStateEntity>) =>
       ({ ...entity, id: stateId }) as LocationStateEntity,
   ),
+  findOne: jest.fn(),
   findOneBy: jest.fn(),
 };
 

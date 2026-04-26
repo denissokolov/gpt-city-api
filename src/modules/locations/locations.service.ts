@@ -47,8 +47,54 @@ export class LocationsService {
     return location;
   }
 
+  private static readonly STATE_TTL_MS = 60 * 60 * 1000;
+
   async getState(id: string, userTime: string): Promise<LocationStateDto> {
     const location = await this.findOne(id);
+
+    const recentState = await this.locationStateRepository.findOne({
+      where: { locationId: location.id, userTime: new Date(userTime) },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (
+      recentState &&
+      Date.now() - recentState.createdAt.getTime() <
+        LocationsService.STATE_TTL_MS
+    ) {
+      const characterStates = await this.characterStateRepository.find({
+        where: { stateId: recentState.id },
+      });
+
+      const charactersById = new Map(
+        location.characters.map((character) => [character.id, character]),
+      );
+
+      const charactersByPlaceId = new Map<string, CharacterDto[]>();
+      for (const cs of characterStates) {
+        const character = charactersById.get(cs.characterId);
+        if (!character) continue;
+        const list = charactersByPlaceId.get(cs.placeId) ?? [];
+        list.push(toCharacterDto(character));
+        charactersByPlaceId.set(cs.placeId, list);
+      }
+
+      const places: PlaceStateDto[] = location.places.map((place) => ({
+        id: place.id,
+        name: place.name,
+        description: place.description,
+        characters: charactersByPlaceId.get(place.id) ?? [],
+      }));
+
+      return {
+        id: location.id,
+        name: location.name,
+        description: location.description,
+        locale: location.locale,
+        stateId: recentState.id,
+        places,
+      };
+    }
 
     const distribution =
       await this.placeDistributorService.distributeCharacters(
