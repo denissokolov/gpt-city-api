@@ -28,7 +28,7 @@ import { ChatsService } from './chats.service';
 @ApiLocaleHeader()
 @Controller('chats')
 export class ChatsController {
-  private readonly SILENCE_IDLE_MS = 30000;
+  private readonly SILENCE_IDLE_MS = 10_000;
 
   constructor(private readonly chatsService: ChatsService) {}
 

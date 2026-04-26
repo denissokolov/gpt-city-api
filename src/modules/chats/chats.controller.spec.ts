@@ -22,7 +22,7 @@ const mockChatEntity = {
 
 const mockChat = {
   ...mockChatEntity,
-  silenceIdleMs: 30_000,
+  silenceIdleMs: 10_000,
 } as ChatDto;
 
 const mockAvatarId = 'c3d4e5f6-a7b8-4012-bdef-123456789012';
