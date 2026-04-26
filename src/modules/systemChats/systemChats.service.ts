@@ -121,7 +121,7 @@ export class SystemChatsService {
         user,
         locale,
       }),
-      tools: this.systemChatToolsService.buildTools(),
+      tools: this.systemChatToolsService.buildTools(userId),
       stopWhen: stepCountIs(this.MAX_TOOL_STEPS),
       experimental_telemetry: {
         isEnabled: true,

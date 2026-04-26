@@ -25,7 +25,7 @@ export const updateUserParams = z.object({
 });
 
 export const clearUserHistoryParams = z.object({
-  id: z.uuid().describe('UUID of the user whose history should be cleared'),
+  userId: z.uuid().describe('UUID of the user whose history should be cleared'),
 });
 
 @Injectable()
@@ -54,8 +54,8 @@ export class UsersTool {
     parameters: clearUserHistoryParams,
     annotations: { readOnlyHint: false, destructiveHint: true },
   })
-  async clearUserHistory({ id }: { id: string }) {
-    const user = await this.usersService.findOne(id);
+  async clearUserHistory({ userId }: { userId: string }) {
+    const user = await this.usersService.findOne(userId);
     const [{ chats, messages }, memories] = await Promise.all([
       this.chatFacade.removeAllByUserId(user.id),
       this.characterFacade.removeMemoriesByUserId(user.id),

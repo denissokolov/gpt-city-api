@@ -33,7 +33,7 @@ export class SystemChatToolsService {
     private readonly userFacade: UserFacade,
   ) {}
 
-  buildTools(): ToolSet {
+  buildTools(userId: string): ToolSet {
     return {
       list_characters: tool({
         description: 'List all characters in the city',
@@ -143,21 +143,21 @@ export class SystemChatToolsService {
       }),
       update_user: tool({
         description: 'Update an existing user profile by ID',
-        inputSchema: updateUserParams,
+        inputSchema: updateUserParams.omit({ id: true }),
         execute: async (args) => {
-          const user = await this.userFacade.update(args);
+          const user = await this.userFacade.update({ id: userId, ...args });
           return JSON.stringify(user, null, 2);
         },
       }),
       clear_user_history: tool({
         description:
           "Wipe a user's chat history with characters: deletes all character memories about the user, all chats they own, and all messages in those chats. Does not touch system chats, system messages, or the user profile itself.",
-        inputSchema: clearUserHistoryParams,
-        execute: async ({ id }) => {
-          const user = await this.userFacade.findOne(id);
+        inputSchema: clearUserHistoryParams.omit({ userId: true }),
+        execute: async () => {
+          const user = await this.userFacade.findOne(userId);
           const [{ chats, messages }, memories] = await Promise.all([
-            this.chatFacade.removeAllByUserId(user.id),
-            this.characterFacade.removeMemoriesByUserId(user.id),
+            this.chatFacade.removeAllByUserId(userId),
+            this.characterFacade.removeMemoriesByUserId(userId),
           ]);
           return JSON.stringify(
             { userId: user.id, deleted: { memories, chats, messages } },
