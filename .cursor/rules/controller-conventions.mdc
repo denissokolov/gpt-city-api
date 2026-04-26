@@ -112,6 +112,41 @@ const document = SwaggerModule.createDocument(app, config, {
 });
 ```
 
+## Ownership checks
+
+Any endpoint that mutates or deletes a resource owned by a user must verify that the authenticated user is the owner of that resource before performing the operation. Return `403 Forbidden` (never `404`) when the resource exists but belongs to someone else.
+
+1. Retrieve `currentUser` via the `@CurrentUser()` decorator (which exposes `JwtPayload` with `sub: string` — the user's UUID).
+2. Load the resource in the service and return it to the controller (or throw `NotFoundException` when it does not exist).
+3. Compare `resource.userId` against `currentUser.sub` in the controller; throw `ForbiddenException` on mismatch.
+4. Only then call the mutating service method.
+
+```typescript
+// ❌ BAD — no ownership check
+@Delete(':id')
+async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+  await this.postsService.remove(id);
+}
+
+// ✅ GOOD
+@Delete(':id')
+@UseGuards(JwtAuthGuard)
+@ApiResponse({ status: 403, description: 'Forbidden – not the owner' })
+async remove(
+  @Param('id', new ParseUUIDPipe()) id: string,
+  @CurrentUser() currentUser: JwtPayload,
+): Promise<void> {
+  const post = await this.postsService.findOneOrThrow(id);
+  if (post.userId !== currentUser.sub) {
+    throw new ForbiddenException();
+  }
+  await this.postsService.remove(id);
+}
+```
+
+- Always document the `403` response with `@ApiResponse({ status: 403, description: 'Forbidden – not the owner' })`.
+- Cover the ownership-check path in unit **and** e2e tests (authenticated as a different user → expect 403).
+
 ## Tests
 
 Every controller requires two test files. Create them alongside the implementation:
