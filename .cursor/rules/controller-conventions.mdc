@@ -45,6 +45,47 @@ sex: Sex;
 - Annotate every endpoint with the appropriate `@ApiOperation()` and `@ApiResponse()` decorators.
 - Never put business logic inside a controller method. Delegate all logic to an injected service.
 
+## Authentication
+
+Every controller **must** be protected by `JwtAuthGuard` at the class level, with two exceptions:
+
+- `HealthController` — public uptime probe, no auth.
+- The MCP controller (registered via `McpModule`) — public by design.
+
+Apply both `@UseGuards(JwtAuthGuard)` and `@ApiBearerAuth()` at the **class** level, not on individual methods. Every endpoint in such a controller must also declare `@ApiResponse({ status: 401, description: 'Missing or invalid JWT' })`.
+
+```typescript
+// ❌ BAD — guard applied per-method, ApiBearerAuth missing on some
+@ApiTags('avatars')
+@Controller('avatars')
+export class AvatarsController {
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  create(...) {}
+
+  @Patch(':id')           // ← unprotected
+  update(...) {}
+}
+
+// ✅ GOOD — guard and bearer auth declared once at class level
+@ApiTags('avatars')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+@Controller('avatars')
+export class AvatarsController {
+  @Post()
+  @ApiResponse({ status: 401, description: 'Missing or invalid JWT' })
+  create(...) {}
+
+  @Patch(':id')
+  @ApiResponse({ status: 401, description: 'Missing or invalid JWT' })
+  update(...) {}
+}
+```
+
+The `auth` controller is a special case: its login endpoint (`POST /auth/google`) is intentionally public, so the guard stays per-method on the endpoints that require it (e.g. `GET /auth/me`).
+
 ## Headers and parameters
 
 Anything a client sends — headers, route params, query params — must be documented with `@nestjs/swagger` so it shows up in the Scalar API reference. If it's not in the OpenAPI document, it effectively doesn't exist for API consumers.
@@ -128,9 +169,8 @@ async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
   await this.postsService.remove(id);
 }
 
-// ✅ GOOD
+// ✅ GOOD — class-level guard, ownership verified in handler
 @Delete(':id')
-@UseGuards(JwtAuthGuard)
 @ApiResponse({ status: 403, description: 'Forbidden – not the owner' })
 async remove(
   @Param('id', new ParseUUIDPipe()) id: string,

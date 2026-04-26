@@ -10,7 +10,13 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
 
 import {
@@ -35,6 +41,7 @@ import { SystemChatsService } from './systemChats.service';
 
 @ApiTags('system-chats')
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @Controller('system-chats')
 export class SystemChatsController {
   constructor(private readonly systemChatsService: SystemChatsService) {}

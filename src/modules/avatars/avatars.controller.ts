@@ -26,13 +26,13 @@ import { AvatarDto, CreateAvatarDto, UpdateAvatarDto } from './avatar.dto';
 import { AvatarsService } from './avatars.service';
 
 @ApiTags('avatars')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @Controller('avatars')
 export class AvatarsController {
   constructor(private readonly avatarsService: AvatarsService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Create a new avatar owned by the authenticated user',
   })
@@ -47,8 +47,6 @@ export class AvatarsController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: "List the authenticated user's avatars" })
   @ApiResponse({ status: 200, type: [AvatarDto] })
   @ApiResponse({ status: 401, description: 'Missing or invalid JWT' })
@@ -64,6 +62,7 @@ export class AvatarsController {
     status: 400,
     description: 'Missing or invalid x-avatar-id header',
   })
+  @ApiResponse({ status: 401, description: 'Missing or invalid JWT' })
   @ApiResponse({ status: 404, description: 'Avatar not found' })
   findCurrent(@AvatarIdHeader() avatarId: string): Promise<AvatarDto> {
     return this.avatarsService.findOne(avatarId);
@@ -78,6 +77,7 @@ export class AvatarsController {
   })
   @ApiResponse({ status: 200, type: AvatarDto })
   @ApiResponse({ status: 400, description: 'Invalid request body' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid JWT' })
   @ApiResponse({ status: 404, description: 'Avatar not found' })
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
