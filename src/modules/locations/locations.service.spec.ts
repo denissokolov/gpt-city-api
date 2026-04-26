@@ -119,6 +119,7 @@ describe('LocationsService', () => {
               (rows: Array<Partial<CharacterStateEntity>>) =>
                 rows as CharacterStateEntity[],
             ),
+            find: jest.fn(),
             findOneBy: jest.fn(),
           },
         },
@@ -151,6 +152,92 @@ describe('LocationsService', () => {
         (entity: Partial<LocationStateEntity>) =>
           ({ ...entity, id: stateId }) as LocationStateEntity,
       );
+    });
+
+    it('should reuse a recent location state without persisting a new one', async () => {
+      locationRepository.findOne.mockResolvedValue(mockLocation);
+
+      const cachedStateId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+      const cachedState: LocationStateEntity = {
+        id: cachedStateId,
+        locationId: mockLocation.id,
+        location: undefined as never,
+        userTime: new Date('2026-04-19T09:30:00.000Z'),
+        characters: [],
+        createdAt: new Date(Date.now() - 60_000),
+        updatedAt: new Date(Date.now() - 60_000),
+      };
+      (locationStateRepository.findOne as jest.Mock).mockResolvedValue(
+        cachedState,
+      );
+      (characterStateRepository.find as jest.Mock).mockResolvedValue([
+        {
+          stateId: cachedStateId,
+          characterId: albert.id,
+          placeId: library.id,
+          mood: 'curious',
+          activity: 'reading',
+        },
+        {
+          stateId: cachedStateId,
+          characterId: marie.id,
+          placeId: observatory.id,
+          mood: 'focused',
+          activity: 'observing',
+        },
+      ] as Array<Partial<CharacterStateEntity>>);
+
+      const result = await service.getState(mockLocation.id, userTime);
+
+      expect(locationStateRepository.findOne).toHaveBeenCalledWith({
+        where: { locationId: mockLocation.id },
+        order: { createdAt: 'DESC' },
+      });
+      expect(placeDistributor.distributeCharacters).not.toHaveBeenCalled();
+      expect(locationStateRepository.save).not.toHaveBeenCalled();
+      expect(characterStateRepository.save).not.toHaveBeenCalled();
+      expect(result.stateId).toBe(cachedStateId);
+      const libraryPlace = result.places.find((p) => p.id === library.id)!;
+      const observatoryPlace = result.places.find(
+        (p) => p.id === observatory.id,
+      )!;
+      expect(libraryPlace.characters).toHaveLength(1);
+      expect(libraryPlace.characters[0].id).toBe(albert.id);
+      expect(observatoryPlace.characters).toHaveLength(1);
+      expect(observatoryPlace.characters[0].id).toBe(marie.id);
+    });
+
+    it('should create a new state when the most recent one is older than the TTL', async () => {
+      locationRepository.findOne.mockResolvedValue(mockLocation);
+
+      const staleState: LocationStateEntity = {
+        id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+        locationId: mockLocation.id,
+        location: undefined as never,
+        userTime: new Date('2026-04-19T08:00:00.000Z'),
+        characters: [],
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      };
+      (locationStateRepository.findOne as jest.Mock).mockResolvedValue(
+        staleState,
+      );
+      placeDistributor.distributeCharacters.mockResolvedValue([
+        {
+          placeId: library.id,
+          characters: [
+            { characterId: albert.id, mood: 'curious', activity: 'reading' },
+          ],
+        },
+      ]);
+
+      await service.getState(mockLocation.id, userTime);
+
+      expect(placeDistributor.distributeCharacters).toHaveBeenCalledWith(
+        mockLocation,
+        userTime,
+      );
+      expect(locationStateRepository.save).toHaveBeenCalledTimes(1);
     });
 
     it('should map characters onto places using the distributor output', async () => {

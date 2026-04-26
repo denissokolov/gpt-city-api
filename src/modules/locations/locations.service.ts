@@ -53,7 +53,7 @@ export class LocationsService {
     const location = await this.findOne(id);
 
     const recentState = await this.locationStateRepository.findOne({
-      where: { locationId: location.id, userTime: new Date(userTime) },
+      where: { locationId: location.id },
       order: { createdAt: 'DESC' },
     });
 
