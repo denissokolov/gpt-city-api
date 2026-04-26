@@ -32,10 +32,10 @@ export class ChatDto {
   placeId: string;
 
   @ApiProperty({
-    description: 'ID of the user who owns the chat',
+    description: 'ID of the avatar who owns the chat',
     example: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
   })
-  userId: string;
+  avatarId: string;
 
   @ApiProperty({
     description: 'ID of the location state snapshot this chat is anchored to',
@@ -80,7 +80,7 @@ export class CreateChatDto {
 export class SendMessageDto {
   @ApiProperty({
     description:
-      'The message sent by the user. Either message, activity, or both must be provided.',
+      'The message sent by the avatar. Either message, activity, or both must be provided.',
     example: 'Hello, how are you?',
     required: false,
   })
@@ -91,7 +91,7 @@ export class SendMessageDto {
 
   @ApiProperty({
     description:
-      'A user activity reported by the client (e.g. silence after some time). Either message, activity, or both must be provided.',
+      'An avatar activity reported by the client (e.g. silence after some time). Either message, activity, or both must be provided.',
     enum: ChatActivity,
     example: ChatActivity.Silence,
     required: false,

@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { tool, type ToolSet } from 'ai';
 
+import { AvatarFacade } from '../avatars/avatar.facade';
+import {
+  clearAvatarHistoryParams,
+  updateAvatarParams,
+} from '../avatars/avatars.tool';
 import { CharacterFacade } from '../characters/character.facade';
 import {
   createCharacterParams,
@@ -21,19 +26,17 @@ import {
   updateLocationParams,
   updatePlaceParams,
 } from '../locations/locations.tool';
-import { UserFacade } from '../users/user.facade';
-import { clearUserHistoryParams, updateUserParams } from '../users/users.tool';
 
 @Injectable()
 export class SystemChatToolsService {
   constructor(
+    private readonly avatarFacade: AvatarFacade,
     private readonly characterFacade: CharacterFacade,
     private readonly chatFacade: ChatFacade,
     private readonly locationFacade: LocationFacade,
-    private readonly userFacade: UserFacade,
   ) {}
 
-  buildTools(userId: string): ToolSet {
+  buildTools(avatarId: string): ToolSet {
     return {
       list_characters: tool({
         description: 'List all characters in the city',
@@ -141,26 +144,29 @@ export class SystemChatToolsService {
           return `Place ${id} deleted`;
         },
       }),
-      update_user: tool({
-        description: 'Update an existing user profile by ID',
-        inputSchema: updateUserParams.omit({ id: true }),
+      update_avatar: tool({
+        description: 'Update an existing avatar profile by ID',
+        inputSchema: updateAvatarParams.omit({ id: true }),
         execute: async (args) => {
-          const user = await this.userFacade.update({ id: userId, ...args });
-          return JSON.stringify(user, null, 2);
+          const avatar = await this.avatarFacade.update({
+            id: avatarId,
+            ...args,
+          });
+          return JSON.stringify(avatar, null, 2);
         },
       }),
-      clear_user_history: tool({
+      clear_avatar_history: tool({
         description:
-          "Wipe a user's chat history with characters: deletes all character memories about the user, all chats they own, and all messages in those chats. Does not touch system chats, system messages, or the user profile itself.",
-        inputSchema: clearUserHistoryParams.omit({ userId: true }),
+          "Wipe an avatar's chat history with characters: deletes all character memories about the avatar, all chats they own, and all messages in those chats. Does not touch system chats, system messages, or the avatar profile itself.",
+        inputSchema: clearAvatarHistoryParams.omit({ avatarId: true }),
         execute: async () => {
-          const user = await this.userFacade.findOne(userId);
+          const avatar = await this.avatarFacade.findOne(avatarId);
           const [{ chats, messages }, memories] = await Promise.all([
-            this.chatFacade.removeAllByUserId(userId),
-            this.characterFacade.removeMemoriesByUserId(userId),
+            this.chatFacade.removeAllByAvatarId(avatarId),
+            this.characterFacade.removeMemoriesByAvatarId(avatarId),
           ]);
           return JSON.stringify(
-            { userId: user.id, deleted: { memories, chats, messages } },
+            { avatarId: avatar.id, deleted: { memories, chats, messages } },
             null,
             2,
           );

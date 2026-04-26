@@ -7,14 +7,14 @@ import { z } from 'zod';
 import { CharacterEntity } from './character.entity';
 import { CharacterMemoryEntity } from './characterMemory.entity';
 import { MessageEntity } from '../chats/message.entity';
-import { UserEntity } from '../users/user.entity';
+import { AvatarEntity } from '../avatars/avatar.entity';
 import { PromptsService } from '../../common/prompts/prompts.service';
 import { LocationEntity } from '../locations/location.entity';
 import { PlaceEntity } from '../locations/place.entity';
 
 export type UpsertCharacterMemoryInput = {
   characterId: string;
-  userId: string;
+  avatarId: string;
   relationship: string | null;
   sentiment: string | null;
   familiarity: string | null;
@@ -38,20 +38,20 @@ export class CharacterMemoriesService {
 
   findOne(
     characterId: string,
-    userId: string,
+    avatarId: string,
   ): Promise<CharacterMemoryEntity | null> {
-    return this.characterMemoryRepository.findOneBy({ characterId, userId });
+    return this.characterMemoryRepository.findOneBy({ characterId, avatarId });
   }
 
-  async removeAllByUserId(userId: string): Promise<number> {
-    const result = await this.characterMemoryRepository.delete({ userId });
+  async removeAllByAvatarId(avatarId: string): Promise<number> {
+    const result = await this.characterMemoryRepository.delete({ avatarId });
     return result.affected ?? 0;
   }
 
   async upsert(
     input: UpsertCharacterMemoryInput,
   ): Promise<CharacterMemoryEntity> {
-    const existing = await this.findOne(input.characterId, input.userId);
+    const existing = await this.findOne(input.characterId, input.avatarId);
     if (existing) {
       existing.relationship = input.relationship || existing.relationship;
       existing.sentiment = input.sentiment || existing.sentiment;
@@ -66,7 +66,7 @@ export class CharacterMemoriesService {
 
   async update(
     character: CharacterEntity,
-    user: UserEntity,
+    avatar: AvatarEntity,
     place: PlaceEntity,
     location: LocationEntity,
     existingMemory: CharacterMemoryEntity | null,
@@ -89,7 +89,7 @@ export class CharacterMemoriesService {
         model: this.MODEL,
         prompt: this.promptsService.render('characterMemory/prompt', {
           character,
-          user,
+          avatar,
           place,
           location,
           existingMemory: existingMemory ?? undefined,
@@ -110,7 +110,7 @@ export class CharacterMemoriesService {
       memory = result.output;
     } catch (error) {
       this.logger.warn(
-        `Failed to generate memory for character "${character.id}" and user "${user.id}": ${
+        `Failed to generate memory for character "${character.id}" and avatar "${avatar.id}": ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
@@ -119,7 +119,7 @@ export class CharacterMemoriesService {
 
     await this.upsert({
       characterId: character.id,
-      userId: user.id,
+      avatarId: avatar.id,
       relationship: this.normalizeField(
         memory.relationship,
         this.FIELD_MAX_LENGTH,

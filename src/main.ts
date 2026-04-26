@@ -12,8 +12,10 @@ import { apiReference } from '@scalar/nestjs-api-reference';
 
 import { AppModule } from './app.module';
 import { ConfigurationService } from './common/configuration/configuration.service';
-import { USER_ID_HEADER } from './common/decorators/userIdHeader.decorator';
+import { AVATAR_ID_HEADER } from './common/decorators/avatarIdHeader.decorator';
 import { mcpTagDescription } from './mcp.tag';
+import { AvatarsModule } from './modules/avatars/avatars.module';
+import { avatarsTagDescription } from './modules/avatars/avatars.tag';
 import { CharactersModule } from './modules/characters/characters.module';
 import { charactersTagDescription } from './modules/characters/characters.tag';
 import { ChatsModule } from './modules/chats/chats.module';
@@ -24,8 +26,6 @@ import { LocationsModule } from './modules/locations/locations.module';
 import { locationsTagDescription } from './modules/locations/locations.tag';
 import { SystemChatsModule } from './modules/systemChats/systemChats.module';
 import { systemChatsTagDescription } from './modules/systemChats/systemChats.tag';
-import { UsersModule } from './modules/users/users.module';
-import { usersTagDescription } from './modules/users/users.tag';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -35,14 +35,14 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
-  // Attach the x-user-id header to the active OpenTelemetry span as `user.id`
-  // so traces in Logfire can be filtered by the user that made the request.
+  // Attach the x-avatar-id header to the active OpenTelemetry span as `avatar.id`
+  // so traces in Logfire can be filtered by the avatar that made the request.
   const fastify = app.getHttpAdapter().getInstance();
   fastify.addHook('onRequest', (request, _reply, done) => {
-    const raw = request.headers[USER_ID_HEADER];
-    const userId = Array.isArray(raw) ? raw[0] : raw;
-    if (userId) {
-      trace.getActiveSpan()?.setAttribute('user.id', userId);
+    const raw = request.headers[AVATAR_ID_HEADER];
+    const avatarId = Array.isArray(raw) ? raw[0] : raw;
+    if (avatarId) {
+      trace.getActiveSpan()?.setAttribute('avatar.id', avatarId);
     }
     done();
   });
@@ -64,7 +64,7 @@ async function bootstrap() {
     )
     .setVersion(configService.getServerVersion())
     .addTag('health', healthTagDescription)
-    .addTag('users', usersTagDescription)
+    .addTag('avatars', avatarsTagDescription)
     .addTag('characters', charactersTagDescription)
     .addTag('locations', locationsTagDescription)
     .addTag('chats', chatsTagDescription)
@@ -74,11 +74,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config, {
     include: [
       HealthModule,
+      AvatarsModule,
       CharactersModule,
       ChatsModule,
       SystemChatsModule,
       LocationsModule,
-      UsersModule,
     ],
   });
 

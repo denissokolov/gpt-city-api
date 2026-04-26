@@ -13,9 +13,9 @@ import { ChatActivity } from './chat.activity.enum';
 import { ChatEntity, CreateChatEntityInput } from './chat.entity';
 import { MessageEntity } from './message.entity';
 import { MessageRole } from './message.enum';
+import { AvatarFacade } from '../avatars/avatar.facade';
 import { CharacterFacade } from '../characters/character.facade';
 import { LocationFacade } from '../locations/location.facade';
-import { UserFacade } from '../users/user.facade';
 import { SendMessageDto } from './chat.dto';
 import { PromptsService } from '../../common/prompts/prompts.service';
 import { Locale } from '../../common/enums/locale.enum';
@@ -32,17 +32,17 @@ export class ChatsService {
     private readonly chatRepository: Repository<ChatEntity>,
     @InjectRepository(MessageEntity)
     private readonly messageRepository: Repository<MessageEntity>,
+    private readonly avatarFacade: AvatarFacade,
     private readonly characterFacade: CharacterFacade,
     private readonly locationFacade: LocationFacade,
-    private readonly userFacade: UserFacade,
     private readonly promptsService: PromptsService,
   ) {}
 
-  async removeAllByUserId(
-    userId: string,
+  async removeAllByAvatarId(
+    avatarId: string,
   ): Promise<{ chats: number; messages: number }> {
-    const messages = await this.messageRepository.countBy({ userId });
-    const chatsResult = await this.chatRepository.delete({ userId });
+    const messages = await this.messageRepository.countBy({ avatarId });
+    const chatsResult = await this.chatRepository.delete({ avatarId });
     return {
       messages,
       chats: chatsResult.affected ?? 0,
@@ -55,7 +55,7 @@ export class ChatsService {
       throw new NotFoundException(`Place with id "${dto.placeId}" not found`);
     }
 
-    await this.userFacade.findOne(dto.userId);
+    await this.avatarFacade.findOne(dto.avatarId);
 
     const characters = await this.characterFacade.findByIds(dto.characterIds);
     if (characters.length !== dto.characterIds.length) {
@@ -84,23 +84,23 @@ export class ChatsService {
 
   async sendMessage(
     chatId: string,
-    userId: string,
+    avatarId: string,
     locale: Locale,
     dto: SendMessageDto,
   ): Promise<ReturnType<typeof streamText>> {
-    const [chat, user, history, previousChats] = await Promise.all([
+    const [chat, avatar, history, previousChats] = await Promise.all([
       this.chatRepository.findOne({
         where: { id: chatId },
         relations: ['place', 'place.location'],
       }),
-      this.userFacade.findOne(userId),
+      this.avatarFacade.findOne(avatarId),
       this.messageRepository.find({
         where: { chatId: chatId },
         order: { createdAt: 'DESC' },
         take: this.MAX_MESSAGE_HISTORY_LENGTH + 1,
       }),
       this.chatRepository.find({
-        where: { userId, summary: Not(IsNull()), id: Not(chatId) },
+        where: { avatarId, summary: Not(IsNull()), id: Not(chatId) },
         order: { createdAt: 'DESC' },
         relations: ['place'],
         take: 10,
@@ -109,12 +109,12 @@ export class ChatsService {
     if (!chat) {
       throw new NotFoundException(`Chat with id "${chatId}" not found`);
     }
-    if (!user) {
-      throw new NotFoundException(`User with id "${userId}" not found`);
+    if (!avatar) {
+      throw new NotFoundException(`Avatar with id "${avatarId}" not found`);
     }
-    if (chat.userId !== user.id) {
+    if (chat.avatarId !== avatar.id) {
       throw new ForbiddenException(
-        `User with id "${userId}" is not the owner of the chat with id "${chatId}"`,
+        `Avatar with id "${avatarId}" is not the owner of the chat with id "${chatId}"`,
       );
     }
 
@@ -144,9 +144,9 @@ export class ChatsService {
       });
     }
 
-    const [memory, characters, characterState, activityMessage, userMessage] =
+    const [memory, characters, characterState, activityMessage, avatarMessage] =
       await Promise.all([
-        this.characterFacade.findMemory(chat.characterIds[0], user.id),
+        this.characterFacade.findMemory(chat.characterIds[0], avatar.id),
         this.characterFacade.findByIds(chat.characterIds),
         this.locationFacade.findCharacterState(
           chat.stateId,
@@ -156,7 +156,7 @@ export class ChatsService {
           ? this.messageRepository.save(
               this.messageRepository.create({
                 chatId: chat.id,
-                userId: chat.userId,
+                avatarId: chat.avatarId,
                 role: MessageRole.User,
                 content: activityContent,
                 characterId: null,
@@ -167,7 +167,7 @@ export class ChatsService {
           ? this.messageRepository.save(
               this.messageRepository.create({
                 chatId: chat.id,
-                userId: chat.userId,
+                avatarId: chat.avatarId,
                 role: MessageRole.User,
                 content: dto.message,
                 characterId: null,
@@ -186,7 +186,7 @@ export class ChatsService {
         character,
         place: chat.place,
         location: chat.place.location,
-        user,
+        avatar,
         memory: memory ?? undefined,
         characterState: characterState ?? undefined,
         historyIsTruncated: hasMoreMessages,
@@ -209,7 +209,7 @@ export class ChatsService {
         const assistantMessage = await this.messageRepository.save(
           this.messageRepository.create({
             chatId: chat.id,
-            userId: chat.userId,
+            avatarId: chat.avatarId,
             role: MessageRole.Assistant,
             content: text,
             characterId: character.id,
@@ -218,15 +218,15 @@ export class ChatsService {
         const fullHistory = [
           ...history.slice(0, this.MAX_MESSAGE_HISTORY_LENGTH).reverse(),
           ...(activityMessage ? [activityMessage] : []),
-          ...(userMessage ? [userMessage] : []),
+          ...(avatarMessage ? [avatarMessage] : []),
           assistantMessage,
         ];
         await Promise.all([
           this.updateChatSummary(chat, fullHistory),
-          userMessage
+          avatarMessage
             ? this.characterFacade.updateMemory(
                 character,
-                user,
+                avatar,
                 chat.place,
                 chat.place.location,
                 memory,

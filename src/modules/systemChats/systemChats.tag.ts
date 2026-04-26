@@ -1,7 +1,7 @@
 export const systemChatsTagDescription = `
-System chats are AI-driven conversations that let an authenticated user manage
+System chats are AI-driven conversations that let an authenticated avatar manage
 the GPT City world through natural language. The assistant has access to a set
-of tools that can read and modify characters, locations, and places, so a user
+of tools that can read and modify characters, locations, and places, so an avatar
 can ask things like "create a new character" or "list all locations" instead of
 calling the REST endpoints directly.
 
@@ -22,4 +22,6 @@ calling the REST endpoints directly.
 | \`create_place\` | Create a new place within a location |
 | \`update_place\` | Update an existing place by ID |
 | \`delete_place\` | Delete a place by ID |
+| \`update_avatar\` | Update an existing avatar profile by ID |
+| \`clear_avatar_history\` | Wipe an avatar's chat history with characters |
 `.trim();

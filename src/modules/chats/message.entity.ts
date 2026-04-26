@@ -7,8 +7,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { AvatarEntity } from '../avatars/avatar.entity';
 import { CharacterEntity } from '../characters/character.entity';
-import { UserEntity } from '../users/user.entity';
 import { ChatEntity } from './chat.entity';
 import { MessageRole } from './message.enum';
 
@@ -24,12 +24,12 @@ export class MessageEntity {
   @Column('uuid')
   chatId: string;
 
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  user: UserEntity;
+  @ManyToOne(() => AvatarEntity, { onDelete: 'CASCADE' })
+  avatar: AvatarEntity;
 
   @Index()
   @Column('uuid')
-  userId: string;
+  avatarId: string;
 
   @ManyToOne(() => CharacterEntity, { onDelete: 'SET NULL', nullable: true })
   character: CharacterEntity | null;
@@ -52,8 +52,11 @@ export class MessageEntity {
 
 export type CreateMessageEntityInput = Omit<
   MessageEntity,
-  'id' | 'chat' | 'user' | 'character' | 'createdAt' | 'updatedAt'
+  'id' | 'chat' | 'avatar' | 'character' | 'createdAt' | 'updatedAt'
 >;
 export type UpdateMessageEntityInput = Partial<
-  Omit<MessageEntity, 'chat' | 'user' | 'character' | 'createdAt' | 'updatedAt'>
+  Omit<
+    MessageEntity,
+    'chat' | 'avatar' | 'character' | 'createdAt' | 'updatedAt'
+  >
 > & { id: string };

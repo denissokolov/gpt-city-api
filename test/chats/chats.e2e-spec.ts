@@ -8,6 +8,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
+import { AvatarFacade } from '../../src/modules/avatars/avatar.facade';
 import { CharacterFacade } from '../../src/modules/characters/character.facade';
 import { ChatActivity } from '../../src/modules/chats/chat.activity.enum';
 import { ChatDto } from '../../src/modules/chats/chat.dto';
@@ -17,7 +18,6 @@ import { ChatsService } from '../../src/modules/chats/chats.service';
 import { MessageEntity } from '../../src/modules/chats/message.entity';
 import { MessageRole } from '../../src/modules/chats/message.enum';
 import { LocationFacade } from '../../src/modules/locations/location.facade';
-import { UserFacade } from '../../src/modules/users/user.facade';
 import { PromptsService } from '../../src/common/prompts/prompts.service';
 
 const mockStreamText = jest.fn();
@@ -36,7 +36,7 @@ const mockStateId = 'e5f6a7b8-c9d0-4234-bfab-345678901234';
 const mockChat = {
   id: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
   placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
-  userId: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
+  avatarId: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
   characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
   stateId: mockStateId,
   summary: null,
@@ -74,7 +74,7 @@ const mockLocationFacade = {
   findCharacterState: jest.fn(),
 };
 
-const mockUserFacade = {
+const mockAvatarFacade = {
   findOne: jest.fn(),
 };
 
@@ -109,8 +109,8 @@ describe('ChatsController (e2e)', () => {
           useValue: mockLocationFacade,
         },
         {
-          provide: UserFacade,
-          useValue: mockUserFacade,
+          provide: AvatarFacade,
+          useValue: mockAvatarFacade,
         },
         {
           provide: PromptsService,
@@ -132,7 +132,7 @@ describe('ChatsController (e2e)', () => {
   });
 
   describe('POST /chats', () => {
-    const validUserId = 'c3d4e5f6-a7b8-4012-bdef-123456789012';
+    const validAvatarId = 'c3d4e5f6-a7b8-4012-bdef-123456789012';
     const validBody = {
       characterIds: ['a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
       placeId: 'f1e2d3c4-b5a6-4789-bcde-f12345678901',
@@ -144,7 +144,7 @@ describe('ChatsController (e2e)', () => {
         id: mockChat.placeId,
         locationId: mockLocationId,
       });
-      mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
+      mockAvatarFacade.findOne.mockResolvedValue({ id: mockChat.avatarId });
       mockCharacterFacade.findByIds.mockResolvedValue(
         mockChat.characterIds.map((id) => ({ id })),
       );
@@ -161,7 +161,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(201)
         .expect((res) => {
@@ -169,7 +169,7 @@ describe('ChatsController (e2e)', () => {
           expect(body.id).toBe(mockChat.id);
           expect(body.characterIds).toEqual(mockChat.characterIds);
           expect(body.placeId).toBe(mockChat.placeId);
-          expect(body.userId).toBe(mockChat.userId);
+          expect(body.avatarId).toBe(mockChat.avatarId);
           expect(body.stateId).toBe(mockStateId);
           expect(body.summary).toBeNull();
         });
@@ -182,23 +182,23 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(404);
     });
 
-    it('should return 404 when the user does not exist', async () => {
+    it('should return 404 when the avatar does not exist', async () => {
       mockLocationFacade.findPlace.mockResolvedValue({
         id: mockChat.placeId,
         locationId: mockLocationId,
       });
-      mockUserFacade.findOne.mockRejectedValue(
-        new NotFoundException('User not found'),
+      mockAvatarFacade.findOne.mockRejectedValue(
+        new NotFoundException('Avatar not found'),
       );
 
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(404);
     });
@@ -208,12 +208,12 @@ describe('ChatsController (e2e)', () => {
         id: mockChat.placeId,
         locationId: mockLocationId,
       });
-      mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
+      mockAvatarFacade.findOne.mockResolvedValue({ id: mockChat.avatarId });
       mockCharacterFacade.findByIds.mockResolvedValue([]);
 
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(404);
     });
@@ -223,7 +223,7 @@ describe('ChatsController (e2e)', () => {
         id: mockChat.placeId,
         locationId: mockLocationId,
       });
-      mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
+      mockAvatarFacade.findOne.mockResolvedValue({ id: mockChat.avatarId });
       mockCharacterFacade.findByIds.mockResolvedValue(
         mockChat.characterIds.map((id) => ({ id })),
       );
@@ -231,7 +231,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(404);
     });
@@ -241,7 +241,7 @@ describe('ChatsController (e2e)', () => {
         id: mockChat.placeId,
         locationId: mockLocationId,
       });
-      mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
+      mockAvatarFacade.findOne.mockResolvedValue({ id: mockChat.avatarId });
       mockCharacterFacade.findByIds.mockResolvedValue(
         mockChat.characterIds.map((id) => ({ id })),
       );
@@ -252,7 +252,7 @@ describe('ChatsController (e2e)', () => {
 
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send(validBody)
         .expect(400);
     });
@@ -262,7 +262,7 @@ describe('ChatsController (e2e)', () => {
       delete (body as Partial<typeof validBody>).stateId;
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send(body)
         .expect(400);
     });
@@ -270,7 +270,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when stateId is not a valid UUID', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send({ ...validBody, stateId: 'not-a-uuid' })
         .expect(400);
     });
@@ -280,22 +280,22 @@ describe('ChatsController (e2e)', () => {
       delete (body as Partial<typeof validBody>).placeId;
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send(body)
         .expect(400);
     });
 
-    it('should return 400 when x-user-id header is missing', () => {
+    it('should return 400 when x-avatar-id header is missing', () => {
       return request(app.getHttpServer())
         .post('/chats')
         .send(validBody)
         .expect(400);
     });
 
-    it('should return 400 when x-user-id header is not a valid UUID', () => {
+    it('should return 400 when x-avatar-id header is not a valid UUID', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', 'not-a-uuid')
+        .set('x-avatar-id', 'not-a-uuid')
         .send(validBody)
         .expect(400);
     });
@@ -303,7 +303,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when characterIds is empty', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send({ ...validBody, characterIds: [] })
         .expect(400);
     });
@@ -311,7 +311,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when characterIds contains invalid UUIDs', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send({ ...validBody, characterIds: ['not-a-uuid'] })
         .expect(400);
     });
@@ -319,7 +319,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when placeId is not a valid UUID', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send({ ...validBody, placeId: 'not-a-uuid' })
         .expect(400);
     });
@@ -327,14 +327,14 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when body is empty', () => {
       return request(app.getHttpServer())
         .post('/chats')
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send({})
         .expect(400);
     });
   });
 
   describe('POST /chats/:id/message', () => {
-    const validUserId = 'c3d4e5f6-a7b8-4012-bdef-123456789012';
+    const validAvatarId = 'c3d4e5f6-a7b8-4012-bdef-123456789012';
     const validLocale = 'en-US';
     const characterId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
@@ -363,7 +363,7 @@ describe('ChatsController (e2e)', () => {
       mockChatRepository.findOne.mockResolvedValue(mockChatWithRelations);
       mockChatRepository.find.mockResolvedValue([]);
       mockChatRepository.update.mockResolvedValue({ affected: 1 });
-      mockUserFacade.findOne.mockResolvedValue({ id: mockChat.userId });
+      mockAvatarFacade.findOne.mockResolvedValue({ id: mockChat.avatarId });
       mockMessageRepository.find.mockResolvedValue(history);
       mockMessageRepository.create.mockImplementation(
         (input: Partial<MessageEntity>) => input as MessageEntity,
@@ -402,7 +402,7 @@ describe('ChatsController (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ message: 'Hello' })
         .expect(200);
@@ -419,7 +419,7 @@ describe('ChatsController (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ message: 'Hello' })
         .expect(200);
@@ -446,7 +446,7 @@ describe('ChatsController (e2e)', () => {
         {
           id: 'prev-msg',
           chatId: mockChat.id,
-          userId: mockChat.userId,
+          avatarId: mockChat.avatarId,
           role: MessageRole.Assistant,
           content: 'Earlier message',
           characterId,
@@ -457,7 +457,7 @@ describe('ChatsController (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ activity: ChatActivity.Silence })
         .expect(200);
@@ -476,13 +476,13 @@ describe('ChatsController (e2e)', () => {
         /^<activity type="silence" durationSeconds="\d+" \/>$/,
       );
       expect(activityMessage?.characterId).toBeNull();
-      const plainUserMessage = createCalls.find(
+      const plainAvatarMessage = createCalls.find(
         (c: Partial<MessageEntity>) =>
           c.role === MessageRole.User &&
           typeof c.content === 'string' &&
           !c.content.startsWith('<activity'),
       );
-      expect(plainUserMessage).toBeUndefined();
+      expect(plainAvatarMessage).toBeUndefined();
 
       const streamCallArgs = mockStreamText.mock.calls[0] as [
         { messages: { role: string; content: string }[] },
@@ -493,12 +493,12 @@ describe('ChatsController (e2e)', () => {
       expect(lastMessage.content).toMatch(/^<activity type="silence"/);
     });
 
-    it('should persist both activity and user messages when message and activity are sent together', async () => {
+    it('should persist both activity and avatar messages when message and activity are sent together', async () => {
       setupHappyPath();
 
       await request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ message: 'Hi', activity: ChatActivity.Silence })
         .expect(200);
@@ -506,24 +506,24 @@ describe('ChatsController (e2e)', () => {
       const createCalls = mockMessageRepository.create.mock.calls.map(
         ([input]: [Partial<MessageEntity>]) => input,
       );
-      const userInputs = createCalls.filter(
+      const avatarInputs = createCalls.filter(
         (c: Partial<MessageEntity>) => c.role === MessageRole.User,
       );
       expect(
-        userInputs.some(
+        avatarInputs.some(
           (c: Partial<MessageEntity>) =>
             typeof c.content === 'string' && c.content.startsWith('<activity'),
         ),
       ).toBe(true);
       expect(
-        userInputs.some((c: Partial<MessageEntity>) => c.content === 'Hi'),
+        avatarInputs.some((c: Partial<MessageEntity>) => c.content === 'Hi'),
       ).toBe(true);
     });
 
     it('should return 400 when neither message nor activity is provided', () => {
       return request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({})
         .expect(400);
@@ -532,7 +532,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when activity is not a known enum value', () => {
       return request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ activity: 'unknown-activity' })
         .expect(400);
@@ -541,7 +541,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when message is sent as an empty string alongside activity', () => {
       return request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .set('x-locale', validLocale)
         .send({ message: '', activity: ChatActivity.Silence })
         .expect(400);
@@ -550,7 +550,7 @@ describe('ChatsController (e2e)', () => {
     it('should return 400 when x-locale is missing', () => {
       return request(app.getHttpServer())
         .post(`/chats/${mockChat.id}/message`)
-        .set('x-user-id', validUserId)
+        .set('x-avatar-id', validAvatarId)
         .send({ activity: ChatActivity.Silence })
         .expect(400);
     });

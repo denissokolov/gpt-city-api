@@ -5,9 +5,9 @@ import { ChatsService } from './chats.service';
 export class ChatFacade {
   constructor(private readonly chatsService: ChatsService) {}
 
-  removeAllByUserId(
-    userId: string,
+  removeAllByAvatarId(
+    avatarId: string,
   ): Promise<{ chats: number; messages: number }> {
-    return this.chatsService.removeAllByUserId(userId);
+    return this.chatsService.removeAllByAvatarId(avatarId);
   }
 }

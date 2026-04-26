@@ -6,13 +6,13 @@ import {
 } from '@nestjs/platform-fastify';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
-import { UserDto } from '../../src/modules/users/user.dto';
-import { UserEntity } from '../../src/modules/users/user.entity';
-import { Sex } from '../../src/modules/users/user.enum';
-import { UsersController } from '../../src/modules/users/users.controller';
-import { UsersService } from '../../src/modules/users/users.service';
+import { AvatarDto } from '../../src/modules/avatars/avatar.dto';
+import { AvatarEntity } from '../../src/modules/avatars/avatar.entity';
+import { Sex } from '../../src/modules/avatars/avatar.enum';
+import { AvatarsController } from '../../src/modules/avatars/avatars.controller';
+import { AvatarsService } from '../../src/modules/avatars/avatars.service';
 
-const mockUser: UserEntity = {
+const mockAvatar: AvatarEntity = {
   id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   firstName: 'Ada',
   lastName: 'Lovelace',
@@ -34,26 +34,26 @@ const mockRepository = {
 };
 
 const validBody = {
-  firstName: mockUser.firstName,
-  lastName: mockUser.lastName,
-  age: mockUser.age,
-  sex: mockUser.sex,
-  title: mockUser.title,
-  backstory: mockUser.backstory,
+  firstName: mockAvatar.firstName,
+  lastName: mockAvatar.lastName,
+  age: mockAvatar.age,
+  sex: mockAvatar.sex,
+  title: mockAvatar.title,
+  backstory: mockAvatar.backstory,
 };
 
-describe('UsersController (e2e)', () => {
+describe('AvatarsController (e2e)', () => {
   let app: NestFastifyApplication;
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [UsersController],
+      controllers: [AvatarsController],
       providers: [
-        UsersService,
+        AvatarsService,
         {
-          provide: getRepositoryToken(UserEntity),
+          provide: getRepositoryToken(AvatarEntity),
           useValue: mockRepository,
         },
       ],
@@ -71,149 +71,152 @@ describe('UsersController (e2e)', () => {
     await app.close();
   });
 
-  describe('POST /users', () => {
-    it('should create a user and return 201', async () => {
-      mockRepository.create.mockReturnValue(mockUser);
-      mockRepository.save.mockResolvedValue(mockUser);
+  describe('POST /avatars', () => {
+    it('should create an avatar and return 201', async () => {
+      mockRepository.create.mockReturnValue(mockAvatar);
+      mockRepository.save.mockResolvedValue(mockAvatar);
 
       return request(app.getHttpServer())
-        .post('/users')
+        .post('/avatars')
         .send(validBody)
         .expect(201)
         .expect((res) => {
-          const body = res.body as UserDto;
-          expect(body.id).toBe(mockUser.id);
-          expect(body.firstName).toBe(mockUser.firstName);
-          expect(body.lastName).toBe(mockUser.lastName);
-          expect(body.age).toBe(mockUser.age);
-          expect(body.sex).toBe(mockUser.sex);
-          expect(body.title).toBe(mockUser.title);
-          expect(body.backstory).toBe(mockUser.backstory);
+          const body = res.body as AvatarDto;
+          expect(body.id).toBe(mockAvatar.id);
+          expect(body.firstName).toBe(mockAvatar.firstName);
+          expect(body.lastName).toBe(mockAvatar.lastName);
+          expect(body.age).toBe(mockAvatar.age);
+          expect(body.sex).toBe(mockAvatar.sex);
+          expect(body.title).toBe(mockAvatar.title);
+          expect(body.backstory).toBe(mockAvatar.backstory);
         });
     });
 
     it('should return 400 when body is empty', () => {
-      return request(app.getHttpServer()).post('/users').send({}).expect(400);
+      return request(app.getHttpServer()).post('/avatars').send({}).expect(400);
     });
 
     it('should return 400 when firstName is missing', () => {
       const body = { ...validBody };
       delete (body as Partial<typeof validBody>).firstName;
-      return request(app.getHttpServer()).post('/users').send(body).expect(400);
+      return request(app.getHttpServer())
+        .post('/avatars')
+        .send(body)
+        .expect(400);
     });
 
     it('should return 400 when age is negative', () => {
       return request(app.getHttpServer())
-        .post('/users')
+        .post('/avatars')
         .send({ ...validBody, age: -1 })
         .expect(400);
     });
 
     it('should return 400 when age is not an integer', () => {
       return request(app.getHttpServer())
-        .post('/users')
+        .post('/avatars')
         .send({ ...validBody, age: 'old' })
         .expect(400);
     });
 
     it('should return 400 when sex is not a valid enum value', () => {
       return request(app.getHttpServer())
-        .post('/users')
+        .post('/avatars')
         .send({ ...validBody, sex: 'not-a-sex' })
         .expect(400);
     });
   });
 
-  describe('GET /users/current', () => {
-    it('should return the current user and 200', async () => {
-      mockRepository.findOneBy.mockResolvedValue(mockUser);
+  describe('GET /avatars/current', () => {
+    it('should return the current avatar and 200', async () => {
+      mockRepository.findOneBy.mockResolvedValue(mockAvatar);
 
       return request(app.getHttpServer())
-        .get('/users/current')
-        .set('x-user-id', mockUser.id)
+        .get('/avatars/current')
+        .set('x-avatar-id', mockAvatar.id)
         .expect(200)
         .expect((res) => {
-          const body = res.body as UserDto;
-          expect(body.id).toBe(mockUser.id);
-          expect(body.firstName).toBe(mockUser.firstName);
-          expect(body.lastName).toBe(mockUser.lastName);
-          expect(body.age).toBe(mockUser.age);
-          expect(body.sex).toBe(mockUser.sex);
-          expect(body.title).toBe(mockUser.title);
-          expect(body.backstory).toBe(mockUser.backstory);
+          const body = res.body as AvatarDto;
+          expect(body.id).toBe(mockAvatar.id);
+          expect(body.firstName).toBe(mockAvatar.firstName);
+          expect(body.lastName).toBe(mockAvatar.lastName);
+          expect(body.age).toBe(mockAvatar.age);
+          expect(body.sex).toBe(mockAvatar.sex);
+          expect(body.title).toBe(mockAvatar.title);
+          expect(body.backstory).toBe(mockAvatar.backstory);
         });
     });
 
-    it('should return 404 when user does not exist', () => {
+    it('should return 404 when avatar does not exist', () => {
       mockRepository.findOneBy.mockResolvedValue(null);
 
       return request(app.getHttpServer())
-        .get('/users/current')
-        .set('x-user-id', mockUser.id)
+        .get('/avatars/current')
+        .set('x-avatar-id', mockAvatar.id)
         .expect(404);
     });
 
-    it('should return 400 when x-user-id header is missing', () => {
-      return request(app.getHttpServer()).get('/users/current').expect(400);
+    it('should return 400 when x-avatar-id header is missing', () => {
+      return request(app.getHttpServer()).get('/avatars/current').expect(400);
     });
 
-    it('should return 400 when x-user-id header is not a UUID', () => {
+    it('should return 400 when x-avatar-id header is not a UUID', () => {
       return request(app.getHttpServer())
-        .get('/users/current')
-        .set('x-user-id', 'not-a-uuid')
+        .get('/avatars/current')
+        .set('x-avatar-id', 'not-a-uuid')
         .expect(400);
     });
   });
 
-  describe('PATCH /users/:id', () => {
+  describe('PATCH /avatars/:id', () => {
     const updateBody = {
       title: 'Senior Mathematician',
       backstory: 'Updated backstory.',
     };
 
-    it('should update a user and return 200', async () => {
-      const updatedUser: UserEntity = { ...mockUser, ...updateBody };
-      mockRepository.findOneBy.mockResolvedValue(mockUser);
-      mockRepository.save.mockResolvedValue(updatedUser);
+    it('should update an avatar and return 200', async () => {
+      const updatedAvatar: AvatarEntity = { ...mockAvatar, ...updateBody };
+      mockRepository.findOneBy.mockResolvedValue(mockAvatar);
+      mockRepository.save.mockResolvedValue(updatedAvatar);
 
       return request(app.getHttpServer())
-        .patch(`/users/${mockUser.id}`)
+        .patch(`/avatars/${mockAvatar.id}`)
         .send(updateBody)
         .expect(200)
         .expect((res) => {
-          const body = res.body as UserDto;
-          expect(body.id).toBe(mockUser.id);
+          const body = res.body as AvatarDto;
+          expect(body.id).toBe(mockAvatar.id);
           expect(body.title).toBe(updateBody.title);
           expect(body.backstory).toBe(updateBody.backstory);
         });
     });
 
-    it('should return 404 when user does not exist', () => {
+    it('should return 404 when avatar does not exist', () => {
       mockRepository.findOneBy.mockResolvedValue(null);
 
       return request(app.getHttpServer())
-        .patch(`/users/${mockUser.id}`)
+        .patch(`/avatars/${mockAvatar.id}`)
         .send(updateBody)
         .expect(404);
     });
 
     it('should return 400 when id is not a UUID', () => {
       return request(app.getHttpServer())
-        .patch('/users/not-a-uuid')
+        .patch('/avatars/not-a-uuid')
         .send(updateBody)
         .expect(400);
     });
 
     it('should return 400 when age is negative', () => {
       return request(app.getHttpServer())
-        .patch(`/users/${mockUser.id}`)
+        .patch(`/avatars/${mockAvatar.id}`)
         .send({ age: -1 })
         .expect(400);
     });
 
     it('should return 400 when sex is not a valid enum value', () => {
       return request(app.getHttpServer())
-        .patch(`/users/${mockUser.id}`)
+        .patch(`/avatars/${mockAvatar.id}`)
         .send({ sex: 'not-a-sex' })
         .expect(400);
     });

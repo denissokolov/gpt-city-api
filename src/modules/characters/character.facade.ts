@@ -8,7 +8,7 @@ import { CharactersService } from './characters.service';
 import { CharacterMemoryEntity } from './characterMemory.entity';
 import { CharacterMemoriesService } from './characterMemories.service';
 import { MessageEntity } from '../chats/message.entity';
-import { UserEntity } from '../users/user.entity';
+import { AvatarEntity } from '../avatars/avatar.entity';
 import { PlaceEntity } from '../locations/place.entity';
 import { LocationEntity } from '../locations/location.entity';
 
@@ -45,18 +45,18 @@ export class CharacterFacade {
 
   findMemory(
     characterId: string,
-    userId: string,
+    avatarId: string,
   ): Promise<CharacterMemoryEntity | null> {
-    return this.characterMemoriesService.findOne(characterId, userId);
+    return this.characterMemoriesService.findOne(characterId, avatarId);
   }
 
-  removeMemoriesByUserId(userId: string): Promise<number> {
-    return this.characterMemoriesService.removeAllByUserId(userId);
+  removeMemoriesByAvatarId(avatarId: string): Promise<number> {
+    return this.characterMemoriesService.removeAllByAvatarId(avatarId);
   }
 
   updateMemory(
     character: CharacterEntity,
-    user: UserEntity,
+    avatar: AvatarEntity,
     place: PlaceEntity,
     location: LocationEntity,
     existingMemory: CharacterMemoryEntity | null,
@@ -64,7 +64,7 @@ export class CharacterFacade {
   ): Promise<void> {
     return this.characterMemoriesService.update(
       character,
-      user,
+      avatar,
       place,
       location,
       existingMemory,

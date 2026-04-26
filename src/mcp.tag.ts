@@ -19,8 +19,8 @@ clients (Cursor, Claude Desktop, etc.) can connect to.
 | \`create-place\` | Create a place within a location |
 | \`update-place\` | Update an existing place |
 | \`delete-place\` | Delete a place |
-| \`update-user\` | Update an existing user profile |
-| \`clear-user-history\` | Wipe a user's chat history with characters (memories, chats, messages) |
+| \`update-avatar\` | Update an existing avatar profile |
+| \`clear-avatar-history\` | Wipe an avatar's chat history with characters (memories, chats, messages) |
 
 ## Connecting
 

@@ -5,10 +5,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Sex } from './user.enum';
+import { Sex } from './avatar.enum';
 
-@Entity('users')
-export class UserEntity {
+@Entity('avatars')
+export class AvatarEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -37,10 +37,10 @@ export class UserEntity {
   updatedAt: Date;
 }
 
-export type CreateUserEntityInput = Omit<
-  UserEntity,
+export type CreateAvatarEntityInput = Omit<
+  AvatarEntity,
   'id' | 'createdAt' | 'updatedAt'
 >;
-export type UpdateUserEntityInput = Partial<
-  Omit<UserEntity, 'createdAt' | 'updatedAt'>
+export type UpdateAvatarEntityInput = Partial<
+  Omit<AvatarEntity, 'createdAt' | 'updatedAt'>
 > & { id: string };

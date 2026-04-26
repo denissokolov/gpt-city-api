@@ -7,9 +7,9 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { AvatarEntity } from '../avatars/avatar.entity';
 import { LocationStateEntity } from '../locations/locationState.entity';
 import { PlaceEntity } from '../locations/place.entity';
-import { UserEntity } from '../users/user.entity';
 
 @Entity('chats')
 export class ChatEntity {
@@ -22,12 +22,12 @@ export class ChatEntity {
   @Column('uuid')
   placeId: string;
 
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  user: UserEntity;
+  @ManyToOne(() => AvatarEntity, { onDelete: 'CASCADE' })
+  avatar: AvatarEntity;
 
   @Index()
   @Column('uuid')
-  userId: string;
+  avatarId: string;
 
   @Column('uuid', { array: true })
   characterIds: string[];
@@ -51,8 +51,8 @@ export class ChatEntity {
 
 export type CreateChatEntityInput = Omit<
   ChatEntity,
-  'id' | 'place' | 'user' | 'state' | 'createdAt' | 'updatedAt'
+  'id' | 'place' | 'avatar' | 'state' | 'createdAt' | 'updatedAt'
 >;
 export type UpdateChatEntityInput = Partial<
-  Omit<ChatEntity, 'place' | 'user' | 'state' | 'createdAt' | 'updatedAt'>
+  Omit<ChatEntity, 'place' | 'avatar' | 'state' | 'createdAt' | 'updatedAt'>
 > & { id: string };

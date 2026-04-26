@@ -10,14 +10,14 @@ export class SystemChatDto {
   id: string;
 
   @ApiProperty({
-    description: 'ID of the user who owns the system chat',
+    description: 'ID of the avatar who owns the system chat',
     example: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
   })
-  userId: string;
+  avatarId: string;
 
   @ApiProperty({
     description:
-      'Human-readable title of the system chat. Auto-generated from the first user message; null until the user sends one.',
+      'Human-readable title of the system chat. Auto-generated from the first message; null until the avatar sends one.',
     example: 'Tweak personalities of city characters',
     nullable: true,
   })
@@ -50,10 +50,10 @@ export class SystemMessageDto {
   systemChatId: string;
 
   @ApiProperty({
-    description: 'ID of the user who owns the chat this message belongs to',
+    description: 'ID of the avatar who owns the chat this message belongs to',
     example: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
   })
-  userId: string;
+  avatarId: string;
 
   @ApiProperty({
     description: 'Role of the message author',
@@ -77,7 +77,7 @@ export class SystemMessageDto {
 
 export class SendSystemMessageDto {
   @ApiProperty({
-    description: 'The message sent by the user to the system assistant',
+    description: 'The message sent by the avatar to the system assistant',
     example: 'Please create a new character named Alice, age 30.',
   })
   @IsString()

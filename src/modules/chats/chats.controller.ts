@@ -3,20 +3,20 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
 
 import {
+  ApiAvatarIdHeader,
+  AvatarIdHeader,
+} from '../../common/decorators/avatarIdHeader.decorator';
+import {
   ApiLocaleHeader,
   LocaleHeader,
 } from '../../common/decorators/localeHeader.decorator';
-import {
-  ApiUserIdHeader,
-  UserIdHeader,
-} from '../../common/decorators/userIdHeader.decorator';
 import { Locale } from '../../common/enums/locale.enum';
 import { pipeAiStreamToReply } from '../../common/utils/pipeAiStreamToReply';
 import { ChatDto, CreateChatDto, SendMessageDto } from './chat.dto';
 import { ChatsService } from './chats.service';
 
 @ApiTags('chats')
-@ApiUserIdHeader()
+@ApiAvatarIdHeader()
 @ApiLocaleHeader()
 @Controller('chats')
 export class ChatsController {
@@ -27,10 +27,10 @@ export class ChatsController {
   @ApiResponse({ status: 201, type: ChatDto })
   @ApiResponse({ status: 400, description: 'Invalid request body' })
   create(
-    @UserIdHeader() userId: string,
+    @AvatarIdHeader() avatarId: string,
     @Body() dto: CreateChatDto,
   ): Promise<ChatDto> {
-    return this.chatsService.create({ ...dto, userId, summary: null });
+    return this.chatsService.create({ ...dto, avatarId, summary: null });
   }
 
   @Post(':id/message')
@@ -39,12 +39,17 @@ export class ChatsController {
   @ApiResponse({ status: 400, description: 'Invalid request body' })
   async sendMessage(
     @Param('id') id: string,
-    @UserIdHeader() userId: string,
+    @AvatarIdHeader() avatarId: string,
     @LocaleHeader() locale: Locale,
     @Body() dto: SendMessageDto,
     @Res() res: FastifyReply,
   ) {
-    const stream = await this.chatsService.sendMessage(id, userId, locale, dto);
+    const stream = await this.chatsService.sendMessage(
+      id,
+      avatarId,
+      locale,
+      dto,
+    );
     pipeAiStreamToReply(stream, res);
   }
 }

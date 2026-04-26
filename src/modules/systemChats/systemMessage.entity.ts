@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserEntity } from '../users/user.entity';
+import { AvatarEntity } from '../avatars/avatar.entity';
 import { SystemChatEntity } from './systemChat.entity';
 import { SystemMessageRole } from './systemMessage.enum';
 
@@ -23,12 +23,12 @@ export class SystemMessageEntity {
   @Column('uuid')
   systemChatId: string;
 
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  user: UserEntity;
+  @ManyToOne(() => AvatarEntity, { onDelete: 'CASCADE' })
+  avatar: AvatarEntity;
 
   @Index()
   @Column('uuid')
-  userId: string;
+  avatarId: string;
 
   @Column({ type: 'enum', enum: SystemMessageRole })
   role: SystemMessageRole;
@@ -45,8 +45,8 @@ export class SystemMessageEntity {
 
 export type CreateSystemMessageEntityInput = Omit<
   SystemMessageEntity,
-  'id' | 'systemChat' | 'user' | 'createdAt' | 'updatedAt'
+  'id' | 'systemChat' | 'avatar' | 'createdAt' | 'updatedAt'
 >;
 export type UpdateSystemMessageEntityInput = Partial<
-  Omit<SystemMessageEntity, 'systemChat' | 'user' | 'createdAt' | 'updatedAt'>
+  Omit<SystemMessageEntity, 'systemChat' | 'avatar' | 'createdAt' | 'updatedAt'>
 > & { id: string };

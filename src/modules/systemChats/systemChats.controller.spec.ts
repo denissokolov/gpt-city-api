@@ -8,7 +8,7 @@ import { SystemChatsService } from './systemChats.service';
 
 const mockChat = {
   id: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
-  userId: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
+  avatarId: 'c3d4e5f6-a7b8-4012-bdef-123456789012',
   title: null,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -17,7 +17,7 @@ const mockChat = {
 const mockMessage = {
   id: 'd4e5f6a7-b8c9-4012-cdef-123456789012',
   systemChatId: mockChat.id,
-  userId: mockChat.userId,
+  avatarId: mockChat.avatarId,
   role: SystemMessageRole.User,
   content: 'Hello system',
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -35,7 +35,7 @@ describe('SystemChatsController', () => {
         {
           provide: SystemChatsService,
           useValue: {
-            findAllForUser: jest.fn(),
+            findAllForAvatar: jest.fn(),
             create: jest.fn(),
             findMessages: jest.fn(),
             remove: jest.fn(),
@@ -49,13 +49,13 @@ describe('SystemChatsController', () => {
   });
 
   describe('list', () => {
-    it('should return chats owned by the current user', async () => {
-      service.findAllForUser.mockResolvedValue([mockChat]);
+    it('should return chats owned by the current avatar', async () => {
+      service.findAllForAvatar.mockResolvedValue([mockChat]);
 
-      const result = await controller.list(mockChat.userId);
+      const result = await controller.list(mockChat.avatarId);
 
       expect(result).toEqual([mockChat]);
-      expect(service.findAllForUser).toHaveBeenCalledWith(mockChat.userId);
+      expect(service.findAllForAvatar).toHaveBeenCalledWith(mockChat.avatarId);
     });
   });
 
@@ -63,23 +63,26 @@ describe('SystemChatsController', () => {
     it('should create and return a chat with title=null', async () => {
       service.create.mockResolvedValue(mockChat);
 
-      const result = await controller.create(mockChat.userId);
+      const result = await controller.create(mockChat.avatarId);
 
       expect(result).toEqual(mockChat);
       expect(service.create).toHaveBeenCalledWith({
-        userId: mockChat.userId,
+        avatarId: mockChat.avatarId,
         title: null,
       });
     });
   });
 
   describe('remove', () => {
-    it('should delete the chat owned by the current user', async () => {
+    it('should delete the chat owned by the current avatar', async () => {
       service.remove.mockResolvedValue(undefined);
 
-      await controller.remove(mockChat.id, mockChat.userId);
+      await controller.remove(mockChat.id, mockChat.avatarId);
 
-      expect(service.remove).toHaveBeenCalledWith(mockChat.id, mockChat.userId);
+      expect(service.remove).toHaveBeenCalledWith(
+        mockChat.id,
+        mockChat.avatarId,
+      );
     });
   });
 
@@ -89,13 +92,13 @@ describe('SystemChatsController', () => {
 
       const result = await controller.listMessages(
         mockChat.id,
-        mockChat.userId,
+        mockChat.avatarId,
       );
 
       expect(result).toEqual([mockMessage]);
       expect(service.findMessages).toHaveBeenCalledWith(
         mockChat.id,
-        mockChat.userId,
+        mockChat.avatarId,
       );
     });
   });

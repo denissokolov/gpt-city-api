@@ -14,7 +14,7 @@ import {
 } from 'ai';
 
 import { PromptsService } from '../../common/prompts/prompts.service';
-import { UserFacade } from '../users/user.facade';
+import { AvatarFacade } from '../avatars/avatar.facade';
 import { SendSystemMessageDto } from './systemChat.dto';
 import {
   CreateSystemChatEntityInput,
@@ -37,35 +37,35 @@ export class SystemChatsService {
     private readonly systemChatRepository: Repository<SystemChatEntity>,
     @InjectRepository(SystemMessageEntity)
     private readonly systemMessageRepository: Repository<SystemMessageEntity>,
-    private readonly userFacade: UserFacade,
+    private readonly avatarFacade: AvatarFacade,
     private readonly promptsService: PromptsService,
     private readonly systemChatToolsService: SystemChatToolsService,
   ) {}
 
-  async findAllForUser(userId: string): Promise<SystemChatEntity[]> {
-    await this.userFacade.findOne(userId);
+  async findAllForAvatar(avatarId: string): Promise<SystemChatEntity[]> {
+    await this.avatarFacade.findOne(avatarId);
     return this.systemChatRepository.find({
-      where: { userId, title: Not(IsNull()) },
+      where: { avatarId, title: Not(IsNull()) },
       order: { createdAt: 'DESC' },
     });
   }
 
   async create(dto: CreateSystemChatEntityInput): Promise<SystemChatEntity> {
-    await this.userFacade.findOne(dto.userId);
+    await this.avatarFacade.findOne(dto.avatarId);
     const chat = this.systemChatRepository.create(dto);
     return this.systemChatRepository.save(chat);
   }
 
-  async remove(chatId: string, userId: string): Promise<void> {
-    const chat = await this.findOwnedChat(chatId, userId);
+  async remove(chatId: string, avatarId: string): Promise<void> {
+    const chat = await this.findOwnedChat(chatId, avatarId);
     await this.systemChatRepository.remove(chat);
   }
 
   async findMessages(
     chatId: string,
-    userId: string,
+    avatarId: string,
   ): Promise<SystemMessageEntity[]> {
-    const chat = await this.findOwnedChat(chatId, userId);
+    const chat = await this.findOwnedChat(chatId, avatarId);
     const messages = await this.systemMessageRepository.find({
       where: { systemChatId: chat.id },
       order: { createdAt: 'DESC' },
@@ -76,13 +76,13 @@ export class SystemChatsService {
 
   async sendMessage(
     chatId: string,
-    userId: string,
+    avatarId: string,
     locale: Locale,
     dto: SendSystemMessageDto,
   ): Promise<ReturnType<typeof streamText>> {
-    const [chat, user, history] = await Promise.all([
-      this.findOwnedChat(chatId, userId),
-      this.userFacade.findOne(userId),
+    const [chat, avatar, history] = await Promise.all([
+      this.findOwnedChat(chatId, avatarId),
+      this.avatarFacade.findOne(avatarId),
       this.systemMessageRepository.find({
         where: { systemChatId: chatId },
         order: { createdAt: 'DESC' },
@@ -104,7 +104,7 @@ export class SystemChatsService {
     await this.systemMessageRepository.save(
       this.systemMessageRepository.create({
         systemChatId: chat.id,
-        userId: chat.userId,
+        avatarId: chat.avatarId,
         role: SystemMessageRole.User,
         content: dto.message,
       }),
@@ -118,10 +118,10 @@ export class SystemChatsService {
     const agent = new ToolLoopAgent({
       model: this.MODEL,
       instructions: this.promptsService.render('systemChat/system', {
-        user,
+        avatar,
         locale,
       }),
-      tools: this.systemChatToolsService.buildTools(userId),
+      tools: this.systemChatToolsService.buildTools(avatarId),
       stopWhen: stepCountIs(this.MAX_TOOL_STEPS),
       experimental_telemetry: {
         isEnabled: true,
@@ -133,7 +133,7 @@ export class SystemChatsService {
         await this.systemMessageRepository.save(
           this.systemMessageRepository.create({
             systemChatId: chat.id,
-            userId: chat.userId,
+            avatarId: chat.avatarId,
             role: SystemMessageRole.Assistant,
             content: text,
           }),
@@ -146,15 +146,15 @@ export class SystemChatsService {
 
   private async findOwnedChat(
     chatId: string,
-    userId: string,
+    avatarId: string,
   ): Promise<SystemChatEntity> {
     const chat = await this.systemChatRepository.findOneBy({ id: chatId });
     if (!chat) {
       throw new NotFoundException(`System chat with id "${chatId}" not found`);
     }
-    if (chat.userId !== userId) {
+    if (chat.avatarId !== avatarId) {
       throw new ForbiddenException(
-        `User with id "${userId}" is not the owner of the system chat with id "${chatId}"`,
+        `Avatar with id "${avatarId}" is not the owner of the system chat with id "${chatId}"`,
       );
     }
     return chat;

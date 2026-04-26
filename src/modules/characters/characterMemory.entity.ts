@@ -10,10 +10,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { CharacterEntity } from './character.entity';
-import { UserEntity } from '../users/user.entity';
+import { AvatarEntity } from '../avatars/avatar.entity';
 
 @Entity('character_memories')
-@Unique('UQ_character_memories_character_user', ['characterId', 'userId'])
+@Unique('UQ_character_memories_character_avatar', ['characterId', 'avatarId'])
 export class CharacterMemoryEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -28,11 +28,11 @@ export class CharacterMemoryEntity {
 
   @Index()
   @Column('uuid')
-  userId: string;
+  avatarId: string;
 
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user: UserEntity;
+  @ManyToOne(() => AvatarEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'avatarId' })
+  avatar: AvatarEntity;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   relationship: string | null;
@@ -55,8 +55,11 @@ export class CharacterMemoryEntity {
 
 export type CreateCharacterMemoryEntityInput = Omit<
   CharacterMemoryEntity,
-  'id' | 'character' | 'user' | 'createdAt' | 'updatedAt'
+  'id' | 'character' | 'avatar' | 'createdAt' | 'updatedAt'
 >;
 export type UpdateCharacterMemoryEntityInput = Partial<
-  Omit<CharacterMemoryEntity, 'character' | 'user' | 'createdAt' | 'updatedAt'>
+  Omit<
+    CharacterMemoryEntity,
+    'character' | 'avatar' | 'createdAt' | 'updatedAt'
+  >
 > & { id: string };

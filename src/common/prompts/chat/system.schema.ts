@@ -20,7 +20,7 @@ export default z.object({
     description: z.string(),
     locale: z.string(),
   }),
-  user: z.object({
+  avatar: z.object({
     firstName: z.string(),
     lastName: z.string(),
     age: z.number(),

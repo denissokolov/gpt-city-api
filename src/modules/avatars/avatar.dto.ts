@@ -8,58 +8,58 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { Sex } from './user.enum';
+import { Sex } from './avatar.enum';
 
-export class UserDto {
+export class AvatarDto {
   @ApiProperty({
-    description: 'Unique identifier of the user',
+    description: 'Unique identifier of the avatar',
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
   id: string;
 
   @ApiProperty({
-    description: 'First name of the user',
+    description: 'First name of the avatar',
     example: 'Ada',
   })
   firstName: string;
 
   @ApiProperty({
-    description: 'Last name of the user',
+    description: 'Last name of the avatar',
     example: 'Lovelace',
   })
   lastName: string;
 
   @ApiProperty({
-    description: 'Age of the user in years',
+    description: 'Age of the avatar in years',
     example: 36,
   })
   age: number;
 
   @ApiProperty({
-    description: 'Sex of the user',
+    description: 'Sex of the avatar',
     enum: Sex,
     example: Sex.Female,
   })
   sex: Sex;
 
   @ApiProperty({
-    description: 'Title or role of the user in the city',
+    description: 'Title or role of the avatar in the city',
     example: 'Mathematician',
   })
   title: string;
 
   @ApiProperty({
     description:
-      'Backstory of the user — where they came from and what shaped them',
+      'Backstory of the avatar — where they came from and what shaped them',
     example:
       'Pioneering mathematician who wrote the first algorithm intended for a machine.',
   })
   backstory: string;
 }
 
-export class CreateUserDto {
+export class CreateAvatarDto {
   @ApiProperty({
-    description: 'First name of the user',
+    description: 'First name of the avatar',
     example: 'Ada',
   })
   @IsString()
@@ -67,7 +67,7 @@ export class CreateUserDto {
   firstName: string;
 
   @ApiProperty({
-    description: 'Last name of the user',
+    description: 'Last name of the avatar',
     example: 'Lovelace',
   })
   @IsString()
@@ -75,7 +75,7 @@ export class CreateUserDto {
   lastName: string;
 
   @ApiProperty({
-    description: 'Age of the user in years',
+    description: 'Age of the avatar in years',
     example: 36,
   })
   @IsInt()
@@ -84,7 +84,7 @@ export class CreateUserDto {
   age: number;
 
   @ApiProperty({
-    description: 'Sex of the user',
+    description: 'Sex of the avatar',
     enum: Sex,
     example: Sex.Female,
   })
@@ -92,7 +92,7 @@ export class CreateUserDto {
   sex: Sex;
 
   @ApiProperty({
-    description: 'Title or role of the user in the city',
+    description: 'Title or role of the avatar in the city',
     example: 'Mathematician',
   })
   @IsString()
@@ -101,7 +101,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     description:
-      'Backstory of the user — where they came from and what shaped them',
+      'Backstory of the avatar — where they came from and what shaped them',
     example:
       'Pioneering mathematician who wrote the first algorithm intended for a machine.',
   })
@@ -110,9 +110,9 @@ export class CreateUserDto {
   backstory: string;
 }
 
-export class UpdateUserDto {
+export class UpdateAvatarDto {
   @ApiProperty({
-    description: 'New first name of the user',
+    description: 'New first name of the avatar',
     example: 'Ada',
     required: false,
   })
@@ -122,7 +122,7 @@ export class UpdateUserDto {
   firstName?: string;
 
   @ApiProperty({
-    description: 'New last name of the user',
+    description: 'New last name of the avatar',
     example: 'Lovelace',
     required: false,
   })
@@ -132,7 +132,7 @@ export class UpdateUserDto {
   lastName?: string;
 
   @ApiProperty({
-    description: 'New age of the user in years',
+    description: 'New age of the avatar in years',
     example: 36,
     required: false,
   })
@@ -143,7 +143,7 @@ export class UpdateUserDto {
   age?: number;
 
   @ApiProperty({
-    description: 'New sex of the user',
+    description: 'New sex of the avatar',
     enum: Sex,
     example: Sex.Female,
     required: false,
@@ -153,7 +153,7 @@ export class UpdateUserDto {
   sex?: Sex;
 
   @ApiProperty({
-    description: 'New title or role of the user in the city',
+    description: 'New title or role of the avatar in the city',
     example: 'Mathematician',
     required: false,
   })
@@ -163,7 +163,7 @@ export class UpdateUserDto {
 
   @ApiProperty({
     description:
-      'New backstory of the user — where they came from and what shaped them',
+      'New backstory of the avatar — where they came from and what shaped them',
     example:
       'Pioneering mathematician who wrote the first algorithm intended for a machine.',
     required: false,

@@ -8,14 +8,14 @@ import { CharacterMemoryEntity } from './characterMemory.entity';
 import { PromptsService } from '../../common/prompts/prompts.service';
 
 const characterId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
-const userId = 'c3d4e5f6-a7b8-4012-bdef-123456789012';
+const avatarId = 'c3d4e5f6-a7b8-4012-bdef-123456789012';
 
 const mockMemory: CharacterMemoryEntity = {
   id: 'd4e5f6a7-b8c9-0123-defa-234567890123',
   characterId,
   character: undefined as never,
-  userId,
-  user: undefined as never,
+  avatarId,
+  avatar: undefined as never,
   relationship: 'a curious stranger',
   sentiment: 'cautiously friendly',
   familiarity: 'has met them once',
@@ -54,22 +54,22 @@ describe('CharacterMemoriesService', () => {
   });
 
   describe('findOne', () => {
-    it('should return the memory for the given (characterId, userId) pair', async () => {
+    it('should return the memory for the given (characterId, avatarId) pair', async () => {
       repository.findOneBy.mockResolvedValue(mockMemory);
 
-      const result = await service.findOne(characterId, userId);
+      const result = await service.findOne(characterId, avatarId);
 
       expect(result).toBe(mockMemory);
       expect(repository.findOneBy).toHaveBeenCalledWith({
         characterId,
-        userId,
+        avatarId,
       });
     });
 
     it('should return null when no memory exists', async () => {
       repository.findOneBy.mockResolvedValue(null);
 
-      const result = await service.findOne(characterId, userId);
+      const result = await service.findOne(characterId, avatarId);
 
       expect(result).toBeNull();
     });
@@ -78,7 +78,7 @@ describe('CharacterMemoriesService', () => {
   describe('upsert', () => {
     const input = {
       characterId,
-      userId,
+      avatarId,
       relationship: 'an old friend',
       sentiment: 'fond and protective',
       familiarity: 'knows them well',
@@ -99,7 +99,7 @@ describe('CharacterMemoriesService', () => {
         expect.objectContaining({
           id: existing.id,
           characterId,
-          userId,
+          avatarId,
           relationship: input.relationship,
           sentiment: input.sentiment,
           familiarity: input.familiarity,
