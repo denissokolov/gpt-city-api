@@ -1,87 +1,97 @@
 # GPT City API
 
-## Project setup
+Backend for **GPT City**, a chat game set in a city where every character is an AI actor. Each NPC has its own personality, backstory, mood and long-term memory of the people it has met, and runs on its own LLM. Players walk the city as an avatar and talk to whoever is around. Using an admin assistant with tools, they can also build their own world: locations, places, and the characters who live there.
 
-```bash
-$ npm install
+The browser client lives in [gpt-city-game-poc](https://github.com/denissokolov/gpt-city-game-poc).
+
+## How it works
+
+- **Characters as actors.** Each character has a name, role, age, personality, backstory, optional per-character instructions, and its own `provider` + `model` (OpenAI, Anthropic or Google, routed through the Vercel AI Gateway). The in-character system prompt keeps them in role: no AI talk, no fourth-wall breaks, replies in the player's language.
+- **Memory.** After every exchange, the character's long-term memory of that avatar (relationship, sentiment, familiarity, key facts) is updated. Each chat is also summarised, so characters remember earlier conversations in other places, and long chats survive history truncation.
+- **A living city.** When a player opens a location, an LLM distributes its characters across its places based on their roles, relationships and the player's local time of day, and gives each one a current mood and activity. The result is cached for an hour.
+- **Silence events.** If the player stays quiet, the client sends an activity event and the character reacts to the pause in character.
+- **World building through chat.** A separate *system chat* is an admin co-pilot with tools to list, create, update and delete characters, locations and places, and to manage the avatar. It confirms before destructive actions.
+- **MCP server.** The same world-building tools are exposed over the [Model Context Protocol](https://modelcontextprotocol.io/), so you can also build the city from Claude Desktop, Cursor or any other MCP client.
+
+## Stack
+
+NestJS 11 on Fastify · TypeORM + PostgreSQL · Redis · Vercel AI SDK (`ai`) via the AI Gateway · `@rekog/mcp-nest` · Handlebars prompt templates with zod-validated inputs · Google sign-in + JWT · OpenAPI with a Scalar explorer · Logfire (OpenTelemetry) tracing · Heroku.
+
+### Code layout
+
+```
+src/
+  modules/        one folder per feature: auth, avatars, characters, chats,
+                  locations, systemChats, health
+                  (modules talk to each other only through *.facade.ts)
+  common/
+    prompts/      Handlebars templates + zod schemas for every LLM call
+    database/     data source and migrations
+    redis/        Redis client (refresh-token revocation)
+  mcp.tag.ts      MCP tool list and connection docs
 ```
 
-## Compile and run the project
+## Getting started
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
+cp .env.example .env    # fill in JWT_SECRET, GOOGLE_CLIENT_ID, AI_GATEWAY_API_KEY
+npm run start:docker    # local Postgres + Redis via docker compose
+npm run migration:run
+npm run start:dev       # http://localhost:3000
 ```
 
-## Run checks
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL`, `DATABASE_SSL` | PostgreSQL connection |
+| `REDIS_URL` | Redis connection |
+| `JWT_SECRET` | Signs application access/refresh tokens |
+| `GOOGLE_CLIENT_ID` | Verifies Google ID tokens at `POST /auth/google` |
+| `AI_GATEWAY_API_KEY` | Vercel AI Gateway key for all model calls |
+| `LOGFIRE_WRITE_TOKEN` | Optional tracing |
+
+## API explorer
+
+The full OpenAPI spec is served at `/openapi.json`, with an interactive [Scalar](https://scalar.com/) explorer at `/doc` for browsing endpoints, schemas, and sending requests from the browser.
+
+- Staging: https://gpt-city-api-5950170b319a.herokuapp.com/doc
+- Local: http://localhost:3000/doc
+
+## Connecting an MCP client
+
+```json
+{
+  "mcpServers": {
+    "gpt-city": { "url": "http://localhost:3000/mcp" }
+  }
+}
+```
+
+Streamable HTTP is served at `/mcp` and SSE at `/sse`. The tool list is in `src/mcp.tag.ts` and in the `mcp` section of the API explorer.
+
+## Checks
 
 ```bash
-# All checks in one command
-$ npm run check
+npm run check       # typecheck + lint + unit tests + e2e tests (same as CI)
+npm run test        # unit tests only
+npm run test:e2e    # e2e tests only
 ```
+
+## Database migrations
 
 ```bash
-# TypeScript Checks
-$ npm run typecheck
-
-# eslint
-$ npm run test
-
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run migration:generate -- src/common/database/migrations/<Name>
+npm run migration:run
+npm run migration:revert
 ```
 
-## Scalar
-
-If you work on UI, design, or product and need to **see what the API returns**—status codes, JSON shape, headers—without writing backend code, use [Scalar](https://scalar.com/). It is a browser-based API explorer built into this project—no extra install needed.
-
-**What you might use it for:** browsing all available endpoints in one place, reading request/response schemas, or trying out a request directly in the browser.
-
-**How to get started**
-
-The easiest way is the staging environment—no local setup required:
-
-- **Staging:** [https://gpt-city-api-5950170b319a.herokuapp.com/api](https://gpt-city-api-5950170b319a.herokuapp.com/api)
-
-To use it locally:
-
-1. Clone this repository and install dependencies once: `npm install`.
-2. Start the API locally: `npm run start`.
-3. Open [http://localhost:3000/api](http://localhost:3000/api) in your browser.
-
-The page lists every endpoint, shows expected parameters and response shapes, and lets you send requests without leaving the browser.
+Migrations also run automatically on every Heroku release (`Procfile`).
 
 ## Deployment
 
-This project is deployed to [Heroku](https://www.heroku.com/). Pushes to `main` that pass CI are deployed automatically via the GitHub Actions workflow.
+Pushes to `main` that pass CI are deployed to [Heroku](https://www.heroku.com/) by GitHub Actions.
 
-### Prerequisites
+1. Create a Heroku app with the **Heroku Postgres** and Redis add-ons, and set the environment variables above.
+2. In the GitHub repo, set the secret `HEROKU_API_KEY` and the variables `HEROKU_APP_NAME` and `HEROKU_EMAIL`.
 
-1. Create a Heroku app and add the **Heroku Postgres** addon.
-2. Set the following in your GitHub repo:
-   - **Secret:** `HEROKU_API_KEY`
-   - **Variables:** `HEROKU_APP_NAME`, `HEROKU_EMAIL`
-
-### Manual deploy
-
-```bash
-$ git push heroku main
-```
-
-### View logs
-
-```bash
-$ heroku logs --tail --app gpt-city-api
-```
+Manual deploy: `git push heroku main`. Logs: `heroku logs --tail --app gpt-city-api`.
